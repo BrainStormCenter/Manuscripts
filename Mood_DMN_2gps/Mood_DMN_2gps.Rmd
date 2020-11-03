@@ -2,7 +2,7 @@
 title: "Mood and DMN 2gps"
 author: "Jason"
 created: "16/03/2020"
-modified: "15/09/2020"
+modified: "03/11/2020"
 output: 
   html_document: 
     toc: yes
@@ -13,7 +13,7 @@ output:
 # OVERVIEW
 Question this study addresses:
 
-* Compared to healthy controls (HC), are factors related to sleep and affect the same in different chronic pain groups (i.e., chronic low back pain (CLBP) and fibromyalgia (FM))?
+* are there any factors that differentiate healthy controls (HC) and chronic low back pain (CLBP) patients?
 
 * Measures analyzed  
   * Pittsburg Sleep Questionnaire  
@@ -24,7 +24,7 @@ Question this study addresses:
 
 ***
 
-**NOTE: THE ANALYSES CONTAINED HEREIN ARE FOR A MANUSCRIPT BASED ON APS 2017.**  
+**NOTE: THE ANALYSES CONTAINED HEREIN WILL BE FOR A MANUSCRIPT BASED ON APS 2017.**  
 **ADDITIONAL ANALYSES AND RESULTS FOR THE POSTER WILL BE IN A DIFFERENT FILE.**
 
 ***FIX THE TEXT BELOW***
@@ -34,28 +34,7 @@ Question this study addresses:
 **Significant differences in sleep and depression among chronic pain groups: Implications for patient education**  
 
 ###  Purpose  
-Chronic pain (CP) is a widespread and costly condition, affecting nearly 100 million Americans and costing over $600 billion annually. Evidence suggests that compared to healthy controls (HC), chronic pain populations experience problems with sleep and depression. Less understood is how whether these problems are differentially experienced by different chronic pain conditions (i.e., chronic low back pain and fibrimyalgia). To address this questions, questionnaire data regarding sleep, depression and pain were collected.  
 
-###  Subjects  
-Data was collected from 158 participants (HC = 50, 27 females); CLBP = 64, 41 females; FM = 44, 39 females). This study was approved by the Institutional Review Board at the University of Missouri. 
-
-###  Methods  
-For this study, participants were recruited from the Columbia, Missouri community and surrounding small towns (Ashland, Booneville, and Moberly). Recruitment flyers were posted in clinics that often treat chronic pain diseases and on a weekly news bulletin email distributed to faculty, staff, and students affiliated with MU or university hospital. For the CLBP group, inclusionary criteria were established to incorporate individuals (1) experiencing CLBP for greater than the past 6 months that fulfills at least one of Quebec Task Force and Spinal Disorders diagnostic criteria, (2) no history of a severe psychological or neuropsychological disorder. Specific criteria for the HC group included (1) no history of chronic pain, severe psychological or neuropsychological disorder. All participants for this study provided written consent. 
-
-As part of the study, participants completed a variety of questionnaires that assessed pain, sleep and affect. Specifically, participants completed the Beck Depression Inventory-II (BDI-II), Epworth Sleepiness Scale, McGill-Melzack Pain Questionnaire and Pittsburg Sleep Quality Index (PSQI). A subgroup of participantas also completed the Insomnia Severity Index.
-
-<mark>*This material could probably be dropped*</mark>  
-For all groups, potential participants were excluded if (1) they could not refrain from usage of analgesics the day before and of their scan, (2) tested positive on a pre-MRI metal screening, (3) were pregnant, (4) and/or did not display pain symptoms consistent with Quebec Task Force and Spinal Disorders diagnostic criteria. 
-
-###  Results  
-An ANOVA with Tukey Honest Significant Differences (TukeyHSD) testing was carried out using RStudio (Version 1.2.5033). The overall test for a main effect of group was significant for all but three variables (i.e., Sleef Effiency, Daytime Dysfunction and Total Time in Bed). PostHoc follow up testing using TukeyHSD revealed the presence of significant group differences for all but the same two variables listed above. However, the FM-HC comparison trended toward significance with p ≤ 0.07. 
-
-###  Conclusions  
-
-
-###  Clinical Relevance  
-
-This study supported by NINR grant #R01NR015314
 
 ***
 
@@ -175,9 +154,16 @@ corr.data = function(data) {
 Import data from GitHub
 ```{r Import-data, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 #		IMPORT DATA FROM GITHUB
-data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
+data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
 data <- as_tibble(data)
+
+# 'https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
+#https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv
+
+# Mood_DMN_2gps/behavioral_data_13042020.csv
+
 ```
+
 
 
 ```{r Clean-data, eval=TRUE, echo=FALSE, message=FALSE, tidy=TRUE, comment=""}
