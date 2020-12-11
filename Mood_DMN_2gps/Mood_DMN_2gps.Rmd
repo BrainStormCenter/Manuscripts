@@ -65,7 +65,6 @@ library(here)
 here()
 dr_here(show_reason = FALSE)
 
-
 ```
 
 ```{r Functions, eval=TRUE, echo=FALSE, message=FALSE}

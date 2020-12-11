@@ -1,0 +1,139 @@
+---
+title: "Date merge"
+author: "Jason"
+date: "12/11/2020"
+output: html_document
+---
+
+# START
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries, eval=TRUE, echo=FALSE, results=FALSE, collapse=TRUE, message=FALSE}
+# library(multcomp)
+# library(knitr)
+# library(readr)
+library(caret)
+library(kableExtra)
+library(psych)
+library(corrplot)
+library(janitor)
+library(ggpubr)
+library(ggsignif)
+library(plyr)
+library(reshape2)
+library(tidyverse)
+library(reprex)
+library(here)
+here()
+dr_here(show_reason = FALSE)
+
+```
+
+
+```{r Functions, eval=TRUE, echo=FALSE, message=FALSE}
+####  different color series		####
+col1 <- colorRampPalette(c("#7F0000", "red", "#FF7F00",
+						   "yellow", "white","cyan",
+						   "#007FFF", "blue","#00007F"))
+col2 <- colorRampPalette(c("#67001F", "#B2182B",
+						   "#D6604D", "#F4A582",
+						   "#FDDBC7", "#FFFFFF",
+						   "#D1E5F0", "#92C5DE",
+						   "#4393C3", "#2166AC", 
+						   "#053061"))
+col3 <- colorRampPalette(c("red", "white", "blue"))
+col4 <- colorRampPalette(c("#7F0000", "red", "#FF7F00", 
+						   "yellow", "#7FFF7F",
+						   "cyan", "#007FFF", "blue",
+						   "#00007F"))
+wb <- c("white", "black")
+
+####		DATE VARIABLE		####
+currentDate <- format(Sys.time(), "%F_%H-%M")
+
+####		APPEND DATE TO STRING		####
+date.time.append <- function(str, sep = '_', date.format ="%Y_%m_%d_%H_%M_%S") {
+stopifnot(is.character(str))
+return(paste(str, format(Sys.time(), date.format), sep = sep))  
+}
+
+# 		TO USE THIS FUNCTION JUST ADD A STRING WITHIN THE PARENTHESESSS AS BELOW
+# 		date.time.append("fileName")
+
+
+####		Function to get correletions and p.values in a "long" data frame		####
+corr.data = function(data) {
+  
+  # Get correlations
+  cor.vals = cor(data)
+  
+  # Get p-values
+  cor.p = cor.mtest(data, conf.level = 0.95)$p
+  rownames(cor.p) = rownames(cor.vals)
+  colnames(cor.p) = colnames(cor.vals)
+  
+  cbind(rowvars=rownames(cor.vals), data.frame(cor.vals)) %>% 
+  	gather(colvars, corr, -rowvars) %>% 
+  	left_join(cbind(rowvars=rownames(cor.p), data.frame(cor.p)) %>% 
+  			  	gather(colvars, p.value, -rowvars))
+}
+
+##		END
+```
+
+
+# DATA
+Import data and Subs from GitHub
+```{r Import-data, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#		IMPORT DATA FROM GITHUB
+data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
+data <- as_tibble(data)
+
+```
+
+
+Import Subs list from GitHub
+```{r Import_Subs, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+Subs <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/SubjectList_2020_12_11_v1.csv'), header = TRUE)
+
+```
+
+
+
+
+## Cleaning Data
+```{r Clean-data, eval=TRUE, echo=FALSE, message=FALSE, tidy=TRUE, comment=""}
+#		CLEANING AND PRESERVING ORIGINAL BEHAVIORAL DATA
+
+# data %>% count(group)
+dat1  <- filter(data, group != 0, group != "NA", data$bdi1 != "NA")
+dat1$group.factor = factor(dat1$group,levels=c("1","2","3"))
+levels(dat1$group.factor)=c("HC","CLBP","FM", na.rm = TRUE)
+# names(dat1)[names(dat1) == 'gp.fct'] <- 'group.factor'
+#		REPLACE HC McGILL TOTAL "NA" WITH 0
+dat1$mcgill_total  <- coalesce(dat1$mcgill_total, 0L)
+
+##		CLEAN ESS BY REMOVING "NA"		##
+dat1   <- filter(dat1, ess_total != "NA")
+
+##		CHANGE VARIABLE TYPE		##
+dat1$ess_total <- as.numeric(dat1$ess_total)
+dat1$bdi_total <- as.numeric(dat1$bdi_total)
+dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
+
+##						ISI					##
+#		The Insomnia Severity Index score "isi_total" is already computed
+
+##		FINAL SUBJECT COUNT		##
+# dat1 %>% count(group.factor)
+
+##						END						##
+```
+
+
+```{r Subject_list, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+
+```
