@@ -1,0 +1,1399 @@
+---
+title: "Experimental Analyses"
+author: "Jason"
+date: "12/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+
+
+
+
+
+This is containes experimental analyses initially from the main document
+
+
+
+
+
+
+
+```{r R-P-value_fcn, eval=FALSE, echo=FALSE, message=FALSE}
+# 		Function to get correletions and p.values in a "long" data frame
+corr.data = function(data) {
+  
+  # Get correlations
+  cor.vals = cor(data)
+  
+  # Get p-values
+  cor.p = cor.mtest(data, conf.level = 0.95)$p
+  rownames(cor.p) = rownames(cor.vals)
+  colnames(cor.p) = colnames(cor.vals)
+  
+  cbind(rowvars=rownames(cor.vals), data.frame(cor.vals)) %>% 
+  	gather(colvars, corr, -rowvars) %>% 
+  	left_join(cbind(rowvars=rownames(cor.p), data.frame(cor.p)) %>% 
+  			  	gather(colvars, p.value, -rowvars))
+}
+
+
+```
+
+
+```{r test-plots, eval=FALSE, echo=FALSE, message=FALSE}
+
+
+ggplot(mpg, aes(class, hwy)) +
+  geom_boxplot() +
+  geom_signif(annotations = c("First", "Second"),
+              y_position = c(30, 40), xmin=c(4,1), xmax=c(5,3))
+
+#
+
+
+ggplot(mpg, aes(class, hwy)) +
+ geom_boxplot() +
+ geom_signif(comparisons = list(c("compact", "pickup"),
+                                c("subcompact", "suv")),
+             map_signif_level=function(p)sprintf("p = %.2g", p))
+
+
+ggplot(mpg, aes(class, hwy)) +
+	geom_boxplot() +
+	geom_signif(comparisons = list(c("compact", "pickup"),
+								   c("subcompact", "suv")))
+
+ggplot(mpg, aes(class, hwy)) +
+	geom_boxplot() +
+	geom_signif(comparisons = list(c("compact", "pickup"),
+								   c("subcompact", "suv")),
+				map_signif_level=function(p)sprintf("p = %.2g", p))
+
+
+p <- ggplot(mpg, aes(displ, cty)) + geom_point()
+p <- ggplot(mpg, aes(displ, cty)) + geom_bar(stat = "identity")
+p <- ggplot(bar1a.means, aes(variable, mean), fill = group) + geom_bar(stat = "identity")
+p + facet_grid(cols = vars(group))
+p
+# Use vars() to supply variables from the dataset:
+p + facet_grid(rows = vars(drv))
+p + facet_grid(cols = vars(cyl))
+p + facet_grid(vars(drv), vars(cyl))
+
+
+
+p1 <- ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  labs(title = "Fuel economy declines as weight increases")
+
+p1 + theme(plot.background = element_rect(fill = "green"))
+
+p1 + theme(panel.background = element_rect(fill = "white", colour = "grey50"))
+
+p1 + theme(panel.grid.major = element_line(colour = "black"))
+
+p1	
+
+p1 + theme(axis.line = element_line(size = 3, colour = "grey80"))
+p1 + theme(axis.text = element_text(colour = "blue"))
+p1 + theme(axis.ticks = element_line(size = 2))
+
+# Change the appearance of the y-axis title
+p1 + theme(axis.title.y = element_text(size = rel(1.5), angle = 90))
+
+# Make ticks point outwards on y-axis and inwards on x-axis
+p1 + theme(
+  axis.ticks.length.y = unit(.25, "cm"),
+  axis.ticks.length.x = unit(-.25, "cm"),
+  axis.text.x = element_text(margin = margin(t = .3, unit = "cm"))
+)
+
+
+p2 <- ggplot(mtcars, aes(wt, mpg)) +
+  geom_point(aes(colour = factor(cyl), shape = factor(vs))) +
+  labs(
+    x = "Weight (1000 lbs)",
+    y = "Fuel economy (mpg)",
+    colour = "Cylinders",
+    shape = "Transmission"
+   )
+p2
+	
+p3 <- ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  facet_wrap(~ cyl)
+p3
+
+	
+
+```
+
+
+```{r bars2, eval=FALSE, echo=FALSE, message=FALSE}
+
+
+
+
+vars.2.smry  <- dat1 %>% 
+	group_by(group.factor) %>%
+	summarise(
+		avg.bdi = mean(bdi_total, na.rm = TRUE),
+		avg.ess = mean(ess_total, na.rm = TRUE)
+	)
+
+t.vars.2.smry <- t(vars.2.smry)
+#
+x1 <- c('bdi', 'ess') # vars
+y1 <- t.vars.2.smry[2:3, 1] # HC
+y2 <- t.vars.2.smry[2:3, 2] # CLBP
+y3 <- t.vars.2.smry[2:3, 3] # FM
+
+zz <- data.frame(x1, y1, y2, y3)
+names(zz)[names(zz) == 'y1'] <- 'HC'
+names(zz)[names(zz) == 'y2'] <- 'CLBP'
+names(zz)[names(zz) == 'y3'] <- 'FM'
+
+
+fig <- plot_ly(zz, x = ~x1, 
+			   y = ~y1, type = 'bar', name = 'HC', 
+			   marker = list(color = 'rgb(255, 0, 0) '))
+fig <- fig %>% add_trace(y = ~y2, name = 'CLBP',
+				 marker = list(color = 'rgb(0, 255, 0)'))
+fig <- fig %>% add_trace(y = ~y3, name = 'FM',
+				 marker = list(color = 'rgb(0, 0, 255)'))
+fig <- fig %>% layout(xaxis = list(title = "Group comparisons",
+								   tickangle = -45),
+					  yaxis = list(title = " "),
+					  margin = list(b = 100),
+					  barmode = 'group')
+
+fig
+
+
+
+fig2 <- vars.2.smry
+fig2 <- fig2 %>% count("avg.bdi", "group.factor")
+fig2 <- fig2 %>% plot_ly(x = ~avg.bdi, y = ~n, color = ~group.factor)
+fig2
+#
+
+fig3 <- ggplot2::diamonds
+fig3 <- fig3 %>% count(cut, clarity)
+fig3 <- fig3 %>% plot_ly(x = ~cut, y = ~n, color = ~clarity)
+
+
+fig  <- plot_ly(vars.2.smry, 
+				x = ~group.factor,
+				y = ~avg.bdi,
+				type = 'bar',
+				name = 'BDI')
+fig <- fig %>% add_trace(y = ~avg.ess,
+						 name = 'ESS')
+fig  <- fig  %>% layout(yaxis = list(title = 'Mean Scores'),
+						barmode = 'group')
+
+fig2 <- plot_ly(data, x = ~xa, y = ~y1a, type = 'bar', name = 'Primary Product', marker = list(color = 'rgb(49,130,189)'))
+
+fig2
+
+
+xa <- c('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+y1a <- c(20, 14, 25, 16, 18, 22, 19, 15, 12, 16, 14, 17)
+y2a <- c(19, 14, 22, 14, 16, 19, 15, 14, 10, 12, 12, 16)
+zdata <- data.frame(xa, y1a, y2a)
+
+
+tzz <- t(zz)
+
+
+
+
+
+zz <- mpg
+
+
+# Use dplyr to calculate the average hwy_mpg by class
+z_by_hwy_mpg <- mpg %>% group_by(class) %>% summarise(hwy_mpg = mean(hwy))
+
+ggplot(z_by_hwy_mpg) + 
+    geom_col(aes(x = class, y = hwy_mpg))
+
+
+
+
+
+# Grouped Bar Plot
+counts <- table(mtcars$vs, mtcars$gear)
+barplot(counts, main="Car Distribution by Gears and VS",
+  xlab="Number of Gears", col=c("darkblue","red"),
+  legend = rownames(counts), beside=TRUE)
+
+view(counts)
+
+barplot(vars.2.smry, main = "group.factor by avg.bdi and avg.ess",
+		xlab = "Group Comparisons",
+		col = c("green", "blue", "red"))
+		
+
+ggplot(data = vars.2.smry, aes(x = group.factor)) +
+	geom_bar(stat = "identity")
+
+
+
+t.vars.2.smry <- t(vars.2.smry)
+
+ggplot(data = t.vars.2.smry, aes())
+
+
+```
+
+
+```{r BDI-Group, eval=FALSE, echo=FALSE, message=FALSE}
+#		AVERAGE BDI_TOTAL BY GROUP
+
+bdi.smry <- dat1 %>%
+	group_by(group.factor) %>%
+	summarise(
+		count = n(),
+		avg.bdi.tot = mean(bdi_total, na.rm = TRUE),
+		sd.bdi.tot = sd(bdi_total, na.rm = TRUE)
+		)
+# view(bdi.smry)
+
+
+
+
+ggplot(data = bdi.smry, aes(x = group.factor,
+							y = avg.bdi.tot,
+							fill = group.factor)) +
+	geom_bar(stat = "identity")
+
+```
+
+
+```{r ISI-Group, eval=FALSE, echo=FALSE, message=FALSE}
+#		AVERAGE BDI_TOTAL BY GROUP
+
+isi.smry <- dat1 %>%
+	group_by(group.factor) %>%
+	summarise(
+		count = n(),
+		avg.isi.tot = mean(isi_total, na.rm = TRUE),
+		sd.isi.tot = sd(isi_total, na.rm = TRUE)
+		)
+# view(bdi.smry)
+isi.smry
+ggplot(data = isi.smry, aes(x = group.factor,
+							y = avg.isi.tot,
+							fill = group.factor)) +
+	geom_bar(stat = "identity")
+
+
+
+```
+
+
+```{r ESS-Group, eval=FALSE, echo=FALSE, message=FALSE}
+#		AVERAGE BDI_TOTAL BY GROUP
+
+ess.smry1 <- dat1 %>%
+	group_by(group.factor) %>%
+	summarise(
+		count = n(),
+		avg.ess.tot = mean(ess_total, na.rm = TRUE),
+		sd.ess.tot = sd(ess_total, na.rm = TRUE)
+		)
+# view(bdi.smry)
+ess.smry1
+ggplot(data = ess.smry1, aes(x = group.factor,
+							y = avg.ess.tot,
+							fill = group.factor)) +
+	geom_bar(stat = "identity")
+
+
+##		different data set
+ess.smry2 <- dat_isi_drop %>%
+	group_by(group.factor) %>%
+	summarise(
+		count = n(),
+		avg.ess.tot = mean(ess_total, na.rm = TRUE),
+		sd.ess.tot = sd(ess_total, na.rm = TRUE)
+		)
+
+ess.smry2
+
+
+
+
+```
+
+
+```{r multiplot, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+```
+
+
+```{r CalcTime, eval=FALSE, echo=FALSE, message=FALSE}
+####			THIS DOESN’T WORK AND I DON'T KNOW WHY			####
+
+# 
+# dat.psqi<- dat.psqi %>%
+# 	mutate(Sleep = if_else(bt.sleep == "PM",
+# 						   true = as.POSIXct(x = paste(bedtime, bt.sleep),
+# 						   				  format = "%I:%M %p"), # time in current date
+# 						   false = as.POSIXct(x = paste(bedtime, bt.sleep),
+# 						   				   format = "%I:%M %p") +
+# 						   	as.difftime(tim = 1, units = "days")), # consider next day for times at/after midnight
+# 		   Wake = as.POSIXct(x = paste(waketime, wt.wake),
+# 		   				  format = "%I:%M %p") +
+# 		   	as.difftime(tim = 1, units = "days"), # time in current date plus one day, equivalently time in next day
+# 		   `zTIB` = difftime(time1 = Wake,
+# 		   							 time2 = Sleep,
+# 		   							 units = "hours")) #%>%  # difference of the two times, guaranteed to be in [0, 24)
+# 	# print(width = Inf)
+# 
+# 
+
+# zz.psqi <- zz.psqi %>% relocate(TIB, .after = last_col())
+
+
+
+
+
+
+```
+
+
+```{r Pain-group-Cor, eval=FALSE, echo=FALSE, message=FALSE}
+####		ADDING GRAPHS TOGETHER		#######
+# corrplot(pain.cor, order = "hclust", type = "upper",
+# 		 # diag = FALSE,
+# 		 col = col1(20),
+# 		 bg = "dark grey",
+# 		 tl.pos = "l",
+# 		 tl.col = "black",
+# 		 addshade = "all",
+# 		 tl.cex = .85)
+# corrplot(pain.cor, add = TRUE, type = "lower",
+# 		 method = "number", order = "hclust",
+# 		 diag = FALSE, tl.pos = "n",
+# 		 col = col1(20),
+# 		 bg = "dark grey",
+# 		 addshade = "all",
+# 		 cl.pos = "n")
+
+
+```
+
+
+```{r gt-tables, eval=FALSE, echo=FALSE, message=FALSE}
+####		THESE GT TABLES WORK		####
+
+####		THIS PUTS THE OVERALL ANOVA TESTS INTO A TABLE	####
+# filter(Models,  term !="Residuals") %>%
+# 	dplyr::select("Name" , "p.value")  %>%
+# 	gt(rowname_col = "Name") %>%
+# 	tab_header(
+# 		title = md("Main effect of group"))  %>% 
+# 	fmt_number(
+# 		columns = vars("p.value"),
+# 		decimals = 4
+# 	)
+
+###		THIS PUT THE PostHoc TESTS INTO A gt TABLE		###
+# select(Tukeys, -term) %>% 
+# 	gt(groupname_col = "Var") %>% 
+# 	tab_header(title = md("*PostHoc*")) %>% 
+# 	tab_stubhead(label = "Group Comps") %>% 
+# 	fmt_number(
+# 		columns = vars("diff", "conf.low", "conf.high"),
+# 		decimals = 2)  %>% 
+# 	fmt_number(#,
+# 		columns = vars("adj.p.value"),
+# 		decimals = 4)
+
+
+
+# groups_x_sex %>% gt()
+# 
+# groups_x_sex %>% 
+# 	gt(groupname_col = "group.factor") %>% 
+# 	tab_header(title = md("**Group by Sex**")) %>% 
+# 	tab_stubhead(label = "Group Comps") # %>% 
+	# fmt_number(
+	# 	columns = vars("diff", "conf.low", "conf.high"),
+	# 	decimals = 2)  %>% 
+	# fmt_number(#,
+	# 	columns = vars("adj.p.value"),
+	# 	decimals = 4)
+
+# dat.sm.smry
+
+# write_csv(dat.sm.smry, "dat.sm.smry.csv",
+# 		  na = "NA", append = FALSE,
+# 		  col_names = TRUE, quote_escape = "double")
+
+# dat.sm.smry  %>% 
+# 	gt()
+
+
+z_table1 <- print(signif(model_summaries$bdi_total$tukey$group.factor, 4))
+
+z_table1
+z_table1 <- as.data.frame(z_table1)
+dim(z_table1)
+names(z_table1)
+
+z_table1$row <- c("CLBP-HC", "FM-HC", 
+				  "FM-CLBP")
+
+z_table1 %>% 
+	gt(rowname_col = "row")  %>% 
+	tab_header(
+		title = md("**BDI**"),
+		subtitle = md("ANOVA PostHoc")) %>% 
+	tab_stubhead(label = "Comparisons")  %>% 
+	fmt_number(
+		columns = vars("diff", "lwr", "upr"),
+		decimals = 2)
+
+	# dplyr::select("row" , "diff", "p adj")  %>% 
+
+# z_table0 <- summary(model_summaries$bdi_total$model)
+# z_table0 <- as.table(z_table0)
+# 
+# zz <- print(summary(model_summaries$bdi_total$model))
+# 
+# zz1 <- summary.aov(model_summaries$bdi_total$model)
+# zz1
+# 
+# zz2 <- as_data_frame(zz1)
+# zz2
+# zz1 <- as_tibble(zz)
+# 
+# zz %>% gt()
+# 
+# 
+# 
+# # %>% 
+# # 	gt()
+# 
+# z_table0  %>% 
+# 	gt()
+# 
+# z_table1 <- print(signif(model_summaries$bdi_total$tukey$group.factor, 4))
+# z_table1 <- as.data.frame(z_table1)
+# z_table1$row <- c("CLBP-HC", "FM-HC", 
+# 				  "FM-CLBP")
+# 
+# z_table1 %>% 
+# 	# dplyr::select("row" , "diff", "p adj")  %>% 
+# 	gt(rowname_col = "row")  %>% 
+# 	tab_header(
+# 		title = md("**BDI**"),
+# 		subtitle = md("ANOVA PostHoc")) %>% 
+# 	tab_stubhead(label = "Comparisons") 
+
+
+
+# %>%
+	# tab_style(
+	# 	style = list(
+	# 		cell_fill(color = "tomato")
+	# 	),
+	# 	locations = cells_body(
+	# 		columns = vars(diff),
+	# 		rows = diff < 1)
+	# fmt_number(
+	# 	columns = vars("p adj"),
+	# 	decimals = 2
+	# ) %>% 
+	# )
+
+z_tab4	
+
+
+# data_color(
+	# 	columns = vars("p adj"),
+	# 	colors = scales::col_numeric(
+	# 		# palette = c("red", "pink", "orange", "yellow"), 
+	# 		palette = c("white", "yellow", "red"),
+	# 		domain = c(-0.005, 0.0005))
+	# ) %>%
+	# tab_footnote(
+	#   footnote = "Color indicates level significance.",
+	#   locations = cells_column_labels(
+	#     columns = vars("p adj"))
+# ) %>% 
+# tab_source_note(
+# 	source_note = "FM-HC is the most significant"
+# ) %>% 
+	
+
+z_tab4
+
+
+```
+
+
+```{r kable-tables, eval=FALSE, echo=FALSE, message=FALSE}
+
+
+# filter(Models,  term !="Residuals") %>%
+# 	dplyr::select("Name" , "p.value")  %>%
+# 	kable() %>% 
+# 	kable_styling(
+# 		bootstrap_options = "striped", 
+# 		full_width = F, position = "left")
+
+```
+
+
+```{r ANOVA-works, eval=FALSE, echo=FALSE}
+#		COMPUTE ANOVA OF MULTIPLE VARIABLES
+
+# "group.factor","slpQual",
+# "slpLat", "slpDur",
+# "slpEff", "slpDist",
+# "slpMeds","slpDayFcn",
+# "psqi_Global","ess_total",
+# "bdi_total", "mcgill_total",
+# "TIB"
+
+model1 = aov(bdi_total ~ group.factor, data = dat1)
+
+model2  <- dat1 %>% 
+	aov(formula = bdi_total ~ group.factor, data = .)
+model3  <- dat1 %>% 
+	aov(formula = ess_total ~ group.factor, data = .)
+model4  <- dat1 %>% 
+	aov(formula = psqi_Global ~ group.factor, data = .)
+model5  <- dat1 %>% 
+	aov(formula = mcgill_total ~ group.factor, data = .)
+
+
+model6  <- dat1 %>% 
+	aov(formula = bdi_total ~ group.factor, data = .)
+model7  <- dat1 %>% 
+	aov(formula = bdi_total ~ group.factor, data = .)
+
+summary(model1)
+summary(model2)
+summary(model3)
+summary(model4)
+summary(model5)
+
+TukeyHSD(model1)
+TukeyHSD(model2)
+TukeyHSD(model3)
+TukeyHSD(model4)
+TukeyHSD(model5)
+```
+
+
+```{r Slack-help, eval=FALSE, echo=FALSE}
+####			From russH on Slack		####
+
+# dat1 %>% select(some, columns)  is equivalent to `dat1[, c("some", "columns")]`
+
+#	OPTION 1 - BUT PostHoc DOESN’T WORK
+modelzz <- dat1 %>%
+  dplyr::select(bdi_total, ess_total) %>% 
+  purrr::map(~ aov(.x ~ group.factor, data = dat1)) %>%
+  purrr::map_dfr(~ broom::tidy(.), .id = 'source')
+
+summary(modelzz)
+
+TukeyHSD(modelzz)
+
+
+#	OPTION 2 - PostHoc DOES WORK
+
+zzz <- data[, c('bdi_total' , 'ess_total')]
+print("hello")
+str(dat1$bdi_total)
+str(dat1$ess_total)
+
+dat1$ess_total
+
+  # construct anova model for each column of dat1[, my_outcome_variables]
+model_summaries <- dat1[,c("bdi_total", "ess_total")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat1))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+# Then you could use:
+
+#		TO ACCESS THE RESULTS
+summary(model_summaries$bdi_total$model)
+print(round(model_summaries$bdi_total$tukey$group.factor, 4))
+print(signif(model_summaries$bdi_total$tukey$group.factor, 3))
+print(signif(model_summaries$bdi_total$tukey$group.factor, 3))
+signif(model_summaries$bdi_total$tukey$group.factor, 3)
+
+
+# summary(model_summaries$bdi_total$tukey$group.factor)
+# model_summaries$x$model #  to access the ANOVA model 
+# and 
+#		THE LINE BELOW DOESN’T WORK YET
+# model_summaries$x$tukey # to access the CI estimates
+
+
+```
+
+
+```{r SsummarySE, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+
+
+################	END
+```
+
+
+```{r normDataWithin, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+## Norms the data within specified groups in a data frame; it normalizes each
+## subject (identified by idvar) so that they have the same mean, within each group
+## specified by betweenvars.
+##   data: a data frame.
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+
+
+normDataWithin <- function(data=NULL, idvar, measurevar, betweenvars=NULL,
+                           na.rm=FALSE, .drop=TRUE) {
+  library(plyr)
+  
+  # Measure var on left, idvar + between vars on right of formula.
+  data.subjMean <- ddply(data, c(idvar, betweenvars), .drop=.drop,
+                         .fun = function(xx, col, na.rm) {
+                           c(subjMean = mean(xx[,col], na.rm=na.rm))
+                         },
+                         measurevar,
+                         na.rm
+  )
+  
+  # Put the subject means with original data
+  data <- merge(data, data.subjMean)
+  
+  # Get the normalized data in a new column
+  measureNormedVar <- paste(measurevar, "_norm", sep="")
+  data[,measureNormedVar] <- data[,measurevar] - data[,"subjMean"] +
+    mean(data[,measurevar], na.rm=na.rm)
+  
+  # Remove this subject mean column
+  data$subjMean <- NULL
+  
+  return(data)
+}
+################		END
+```
+
+
+```{r summarySEwithin, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+## Summarizes data, handling within-subjects variables by removing inter-subject variability.
+## It will still work if there are no within-S variables.
+## Gives count, un-normed mean, normed mean (with same between-group mean),
+##   standard deviation, standard error of the mean, and confidence interval.
+## If there are within-subject variables, calculate adjusted values using method from Morey (2008).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   withinvars: a vector containing names of columns that are within-subjects variables
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+
+
+summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=NULL,
+                            idvar=NULL, na.rm=FALSE, conf.interval=.95, .drop=TRUE) {
+  
+  # Ensure that the betweenvars and withinvars are factors
+  factorvars <- vapply(data[, c(betweenvars, withinvars), drop=FALSE],
+                       FUN=is.factor, FUN.VALUE=logical(1))
+  
+  if (!all(factorvars)) {
+    nonfactorvars <- names(factorvars)[!factorvars]
+    message("Automatically converting the following non-factors to factors: ",
+            paste(nonfactorvars, collapse = ", "))
+    data[nonfactorvars] <- lapply(data[nonfactorvars], factor)
+  }
+  
+  # Get the means from the un-normed data
+  datac <- summarySE(data, measurevar, groupvars=c(betweenvars, withinvars),
+                     na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+  
+  # Drop all the unused columns (these will be calculated with normed data)
+  datac$sd <- NULL
+  datac$se <- NULL
+  datac$ci <- NULL
+  
+  # Norm each subject's data
+  ndata <- normDataWithin(data, idvar, measurevar, betweenvars, na.rm, .drop=.drop)
+  
+  # This is the name of the new column
+  measurevar_n <- paste(measurevar, "_norm", sep="")
+  
+  # Collapse the normed data - now we can treat between and within vars the same
+  ndatac <- summarySE(ndata, measurevar_n, groupvars=c(betweenvars, withinvars),
+                      na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+  
+  # Apply correction from Morey (2008) to the standard error and confidence interval
+  #  Get the product of the number of conditions of within-S variables
+  nWithinGroups    <- prod(vapply(ndatac[,withinvars, drop=FALSE], FUN=nlevels,
+                                  FUN.VALUE=numeric(1)))
+  correctionFactor <- sqrt( nWithinGroups / (nWithinGroups-1) )
+  
+  # Apply the correction factor
+  ndatac$sd <- ndatac$sd * correctionFactor
+  ndatac$se <- ndatac$se * correctionFactor
+  ndatac$ci <- ndatac$ci * correctionFactor
+  
+  # Combine the un-normed means with the normed results
+  merge(datac, ndatac)
+}
+##############		END
+```
+
+
+```{r Example, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+data <- read.table(header=TRUE, text='
+ Subject RoundMono SquareMono RoundColor SquareColor
+                   1        41         40         41          37
+                   2        57         56         56          53
+                   3        52         53         53          50
+                   4        49         47         47          47
+                   5        47         48         48          47
+                   6        37         34         35          36
+                   7        47         50         47          46
+                   8        41         40         38          40
+                   9        48         47         49          45
+                   10        37         35         36          35
+                   11        32         31         31          33
+                   12        47         42         42          42
+                   ')
+
+# Convert it to long format
+library(reshape2)
+data_long <- melt(data=data, id.var="Subject",
+                  measure.vars=c("RoundMono", "SquareMono", "RoundColor", "SquareColor"),
+                  variable.name="Condition")
+names(data_long)[names(data_long)=="value"] <- "Time"
+
+# Split Condition column into Shape and ColorScheme
+data_long$Shape <- NA
+data_long$Shape[grepl("^Round",  data_long$Condition)] <- "Round"
+data_long$Shape[grepl("^Square", data_long$Condition)] <- "Square"
+data_long$Shape <- factor(data_long$Shape)
+
+data_long$ColorScheme <- NA
+data_long$ColorScheme[grepl("Mono$",  data_long$Condition)] <- "Monochromatic"
+data_long$ColorScheme[grepl("Color$", data_long$Condition)] <- "Colored"
+data_long$ColorScheme <- factor(data_long$ColorScheme, levels=c("Monochromatic","Colored"))
+
+# Remove the Condition column now
+data_long$Condition <- NULL
+
+# Look at first few rows 
+head(data_long)
+#>   Subject Time Shape   ColorScheme
+#> 1       1   41 Round Monochromatic
+#> 2       2   57 Round Monochromatic
+#> 3       3   52 Round Monochromatic
+#> 4       4   49 Round Monochromatic
+#> 5       5   47 Round Monochromatic
+#> 6       6   37 Round Monochromatic
+
+datac <- summarySEwithin(data_long, measurevar="Time", withinvars=c("Shape","ColorScheme"), idvar="Subject")
+datac
+#>    Shape   ColorScheme  N     Time Time_norm       sd        se        ci
+#> 1  Round       Colored 12 43.58333  43.58333 1.212311 0.3499639 0.7702654
+#> 2  Round Monochromatic 12 44.58333  44.58333 1.331438 0.3843531 0.8459554
+#> 3 Square       Colored 12 42.58333  42.58333 1.461630 0.4219364 0.9286757
+#> 4 Square Monochromatic 12 43.58333  43.58333 1.261312 0.3641095 0.8013997
+
+library(ggplot2)
+ggplot(datac, aes(x=Shape, y=Time, fill=ColorScheme)) +
+  geom_bar(position=position_dodge(.9), colour="black", stat="identity") +
+  geom_errorbar(position=position_dodge(.9), width=.25, aes(ymin=Time-ci, ymax=Time+ci)) +
+  coord_cartesian(ylim=c(40,46)) +
+  scale_fill_manual(values=c("#CCCCCC","#FFFFFF")) +
+  scale_y_continuous(breaks=seq(1:100)) +
+  theme_bw() +
+  geom_hline(yintercept=38) 
+
+
+```
+
+
+```{r scrap, eval=FALSE, echo=FALSE, message=FALSE}
+
+
+
+
+
+library(tidyr)
+library(stringr)
+library(dplyr)
+data_long <- data %>% pivot_longer(cols = RoundMono:SquareColor, 
+                                    names_to = "Condition", values_to = "Time")
+data_long <- data_long %>% mutate(
+  Shape = case_when(
+    str_detect(Condition, "^Round") ~ "Round",
+    str_detect(Condition, "^Square") ~ "Square"
+  )
+)
+data_long$Shape <- factor(data_long$Shape)
+
+data_long <- data_long %>% mutate(
+  ColorScheme = case_when(
+    str_detect(Condition, "Mono$") ~ "Monochromatic",
+    str_detect(Condition, "Color$") ~ "Colored"
+  )
+)
+data_long$ColorScheme <- factor(data_long$ColorScheme, levels=c("Monochromatic","Colored"))
+
+data_long <- data_long[, c(1,3,4,5,2)]
+
+datac2 <- summarySEwithin(data_long, measurevar="Time",
+						 withinvars=c("Shape","ColorScheme"), idvar="Subject")
+
+
+
+
+
+str(data_long)
+head(data_long)
+
+# library(readxl) # This is used to import data from excel
+# library(gt)
+# library(DataExplorer)
+# library(formattable)
+# library(xtable)
+# library(broom)
+# library(glue)
+# library(doBy)
+# library(lubridate)
+# library(colorspace)
+# library(ez)
+# library(Hmisc)
+# library(modelr)
+# library(fuzzyjoin)
+# library(reshape2)
+# library(varhandle)
+# library(car)
+# library(lattice)
+# library(Formula)
+# library(Hmisc)
+# library(skimr)
+# library(plotly)
+# library(ez) Not working for some reason March 17, 2020
+# library(readr)		# ALREADY IN TIDYVERSE
+# library(ggplot2)		# ALREADY IN TIDYVERSE
+# library(dplyr) 		# ALREADY IN TIDYVERSE
+
+
+
+#			TABLES		#
+
+# gpsex1 <- gpsex1 %>% adorn_totals(c("row", "col"))
+
+# dat1 %>% count(group.factor) %>% 
+# 	kable(align = "c", padding = 4) %>% 
+# 	kable_styling("striped", full_width = F) %>% 
+# 	collapse_rows(columns = 1:2, valign = "top") %>% 
+# 	row_spec(0, bold = T, color = "white", background = "#461B7E") 
+
+# group_by_sex %>% 
+# 	kable(align = "c", padding = 4) %>% 
+# 	kable_styling("striped", full_width = F) %>% 
+# 	collapse_rows(columns = 1:2, valign = "top") %>% 
+# 	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+
+
+```
+
+
+```{r OLD-FMcorrplot, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.FM2 <- dat.FM %>% select(!"group.factor", -TIB)
+dat.FM2 <- dat.FM2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+corr.data(dat.FM2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 1.5, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=1.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "FM pain group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+```{r old-MeansSD, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+
+
+head(who)
+# Multiple observations per row
+anscombe
+anscombe %>%
+ pivot_longer(everything(),
+   names_to = c(".value", "set"),
+   names_pattern = "(.)(.)"
+ )
+
+
+
+
+
+
+#_______________
+#_______________
+
+zz2 <- dat.meansd.means 
+
+bind_rows(
+	
+	zz2 %>% 
+		group_by(group) %>%
+		 summarize(
+			`Mean (SD)` = glue("{zz2$mean} ({zz2$sd)"),
+			)
+	)
+#)
+
+
+
+# result <-
+bind_rows(
+  
+  zz %>% 
+    select(ob, num1, num2) %>%   #select(is.numeric()) requires dplyr 1.0.0
+    pivot_longer(c(-ob)) %>% 
+    group_by(name) %>% 
+    summarize(
+      `Mean (SD)` = glue("{mean(value)} ({sd(value) %>% round(2)})"),
+    )
+  )
+#,
+  
+  
+  zz %>%  
+    select(ob, cat1, cat2) %>% 
+    pivot_longer(c(-ob,)) %>%
+    group_by(name) %>% 
+    summarise(
+      `%` = mean(value)
+    )
+  
+) %>% 
+    replace_na(
+      list(
+        `Mean (SD)` = "",
+        `%` = "-"
+      )
+    )
+
+zz2 <- bind_rows(
+	
+	dat.sm %>% 
+		# select(ob, num1, num2) %>%   #select(is.numeric()) requires dplyr 1.0.0
+		# pivot_longer(c(-ob)) %>% 
+		group_by(group.factor) %>% 
+		summarize(
+			across(
+			`Mean (SD)` = glue("{mean(value)} ({sd(value) %>% round(2)})")
+			)
+		),)
+
+
+dat.meansd.means <- ddply(dat.meansd.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sd = sd(score))
+
+
+
+
+
+# z.dat1 <- dat.asq %>%
+# 	as_tibble() %>%
+# 	# filter(Groups != "other") %>%
+# 	select(ID, sex, ends_with("a")) %>%
+# 	gather(asq, value, -ID, -sex, na.rm = FALSE) %>%
+# 	group_by(ID) %>%
+# 	mutate(z = as.vector(scale(value))) %>%
+# 	pivot_wider(names_from = asq, values_from = c(value, z))
+
+
+# bdi.smry <- dat1 %>%
+# 	group_by(group.factor) %>%
+# 	summarise(
+# 		count = n(),
+# 		avg.bdi.tot = mean(bdi_total, na.rm = TRUE),
+# 		sd.bdi.tot = sd(bdi_total, na.rm = TRUE)
+# 		)
+# 
+
+
+dat.bar1.orig  <- dat1 %>% dplyr::select("ID","group.factor",
+										 "slpQual", "slpLat", 
+										 "slpDur", "slpEff", 
+										 "slpDayFcn", "psqi_Global",
+										 "ess_total", "bdi_total", 
+										 "mcgill_total")
+
+dat.bar1.orig$ID <- factor(dat.bar1.orig$ID) # ID must be a factor
+names(dat.bar1.orig)[names(dat.bar1.orig)=="group.factor"] <- "group"
+
+#	select data for 1st bar chart = BDI, ESS, McGill
+dat.bar1a <- select(dat.bar1.orig, ID, group, 
+					slpDayFcn, slpEff, slpDur,
+					slpQual, slpLat)
+
+bar1a.melt <- melt(dat.bar1a, id.vars = c("ID", "group")) 
+names(bar1a.melt)[names(bar1a.melt)=="value"] <- "score"
+
+bar1a.means <- ddply(bar1a.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+
+
+dat.bar1.orig$ID <- factor(dat.bar1.orig$ID) # ID must be a factor
+names(dat.bar1.orig)[names(dat.bar1.orig)=="group.factor"] <- "group"
+
+###			TABLE OF MEANS AND SDs		###
+dat.meansd.data  <- dat1 %>% dplyr::select("ID","group.factor",
+										 "slpQual", "slpLat")
+
+dat.meansd.data$ID <- factor(dat.meansd.data$ID) # ID must be a factor
+names(dat.meansd.data)[names(dat.meansd.data)=="group.factor"] <- "group"			
+
+dat.meansd.melt <- melt(dat.meansd.data, id.vars = c("ID", "group")) 
+names(dat.meansd.melt)[names(dat.meansd.melt)=="value"] <- "score"
+
+dat.meansd.means <- ddply(dat.meansd.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sd = sd(score))
+
+
+```
+
+
+```{r table, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+
+
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
+```
+
+
+```{r helper-fcns, eval=FALSE, echo=FALSE, message=FALSE}
+
+####			HELPER FUNCTIONS		####
+#1
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+
+#2
+## Norms the data within specified groups in a data frame; it normalizes each
+## subject (identified by idvar) so that they have the same mean, within each group
+## specified by betweenvars.
+##   data: a data frame.
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+normDataWithin <- function(data=NULL, idvar, measurevar, betweenvars=NULL,
+                           na.rm=FALSE, .drop=TRUE) {
+    library(plyr)
+
+    # Measure var on left, idvar + between vars on right of formula.
+    data.subjMean <- ddply(data, c(idvar, betweenvars), .drop=.drop,
+     .fun = function(xx, col, na.rm) {
+        c(subjMean = mean(xx[,col], na.rm=na.rm))
+      },
+      measurevar,
+      na.rm
+    )
+
+    # Put the subject means with original data
+    data <- merge(data, data.subjMean)
+
+    # Get the normalized data in a new column
+    measureNormedVar <- paste(measurevar, "_norm", sep="")
+    data[,measureNormedVar] <- data[,measurevar] - data[,"subjMean"] +
+                               mean(data[,measurevar], na.rm=na.rm)
+
+    # Remove this subject mean column
+    data$subjMean <- NULL
+
+    return(data)
+}
+
+#3
+summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=NULL,
+                            idvar=NULL, na.rm=FALSE, conf.interval=.95, .drop=TRUE) {
+
+  # Ensure that the betweenvars and withinvars are factors
+  factorvars <- vapply(data[, c(betweenvars, withinvars), drop=FALSE],
+    FUN=is.factor, FUN.VALUE=logical(1))
+
+  if (!all(factorvars)) {
+    nonfactorvars <- names(factorvars)[!factorvars]
+    message("Automatically converting the following non-factors to factors: ",
+            paste(nonfactorvars, collapse = ", "))
+    data[nonfactorvars] <- lapply(data[nonfactorvars], factor)
+  }
+
+  # Get the means from the un-normed data
+  datac <- summarySE(data, measurevar, groupvars=c(betweenvars, withinvars),
+                     na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Drop all the unused columns (these will be calculated with normed data)
+  datac$sd <- NULL
+  datac$se <- NULL
+  datac$ci <- NULL
+
+  # Norm each subject's data
+  ndata <- normDataWithin(data, idvar, measurevar, betweenvars, na.rm, .drop=.drop)
+
+  # This is the name of the new column
+  measurevar_n <- paste(measurevar, "_norm", sep="")
+
+  # Collapse the normed data - now we can treat between and within vars the same
+  ndatac <- summarySE(ndata, measurevar_n, groupvars=c(betweenvars, withinvars),
+                      na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Apply correction from Morey (2008) to the standard error and confidence interval
+  #  Get the product of the number of conditions of within-S variables
+  nWithinGroups    <- prod(vapply(ndatac[,withinvars, drop=FALSE], FUN=nlevels,
+                           FUN.VALUE=numeric(1)))
+  correctionFactor <- sqrt( nWithinGroups / (nWithinGroups-1) )
+
+  # Apply the correction factor
+  ndatac$sd <- ndatac$sd * correctionFactor
+  ndatac$se <- ndatac$se * correctionFactor
+  ndatac$ci <- ndatac$ci * correctionFactor
+
+  # Combine the un-normed means with the normed results
+  merge(datac, ndatac)
+}
+
+
+
+##						END						##
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
