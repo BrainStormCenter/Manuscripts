@@ -2,10 +2,11 @@
 title: "Mood and DMN 2gps"
 author: "Jason"
 created: "16/03/2020"
-modified: "03/11/2020"
+modified: "12/11/2020"
 output: 
   html_document: 
     toc: yes
+    number_sections: yes
 ---
 
 ***
@@ -121,10 +122,10 @@ corr.data = function(data) {
 
 ```{r data prep, eval=FALSE, echo=FALSE}
 ####	THIS IS COMPLETED FOR THE DATA USED HERE AS OF April 23, 2020 		####
-
+####		THIS DOESN’T NEED TO BE DONE FOR THE MOOD MANUSCRIPTS
 
 ##				NOTE			##
-# Subject 248 WAKE TIME NEEDS TO BE CHANGED TO AM FROM PM  
+# Subject 248 WAKE TIME NEEDS TO BE CHANGED TO AM FROM PM
 # THIS IS VERY VERY IMPORTANT
 
 #		THIS SECTION PREPARED THE ORIGINAL DATA FOR SUBSEQUENT USE
