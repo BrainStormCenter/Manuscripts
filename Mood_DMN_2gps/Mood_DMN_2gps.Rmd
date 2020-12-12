@@ -164,13 +164,30 @@ data <- as_tibble(data)
 
 ```
 
+Import Subs list from GitHub
+```{r Import_Subs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+subs <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/SubjectList_2020_12_11_v1.csv'), header = TRUE)
+subs <- as_tibble(subs)
+subs <- subs %>% dplyr::select("ID") # has imaging data
+
+```
+
+
+## Subset
+```{r DataSubset, eval=TRUE, echo=FALSE, message=FALSE}
+#	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
+dat0 <- merge(data, subs)
+dat0 <- as_tibble(dat0)
+```
+
+
 
 
 ```{r Clean-data, eval=TRUE, echo=FALSE, message=FALSE, tidy=TRUE, comment=""}
 #		CLEANING AND PRESERVING ORIGINAL DATA
 
-# data %>% count(group)
-dat1  <- filter(data, group != 0, group != "NA", data$bdi1 != "NA")
+data %>% count(group)
+dat1  <- filter(dat0, group != 0, group != "NA", dat0$bdi1 != "NA")
 dat1$group.factor = factor(dat1$group,levels=c("1","2","3"))
 levels(dat1$group.factor)=c("HC","CLBP","FM", na.rm = TRUE)
 # names(dat1)[names(dat1) == 'gp.fct'] <- 'group.factor'
@@ -189,7 +206,7 @@ dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
 #		The Insomnia Severity Index score "isi_total" is already computed
 
 ##		FINAL SUBJECT COUNT		##
-# dat1 %>% count(group.factor)
+dat1 %>% count(group.factor)
 
 ##						END						##
 ```
