@@ -85,7 +85,7 @@ corr.data = function(data) {
 
 
 # DATA
-Import data and Subs from GitHub
+Import data from GitHub
 ```{r Import-data, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 #		IMPORT DATA FROM GITHUB
 data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
@@ -97,6 +97,7 @@ data <- as_tibble(data)
 Import Subs list from GitHub
 ```{r Import_Subs, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 Subs <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/SubjectList_2020_12_11_v1.csv'), header = TRUE)
+Subs1 <- as_tibble(Subs)
 
 ```
 
@@ -132,8 +133,31 @@ dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
 ##						END						##
 ```
 
+### Small dataset test
+```{r Small_dataset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#	1. CREATE A SMALL DATASET FROM dat1
+#	2. TEST THE MERGE FCN WITH THE Subs list
 
-```{r Subject_list, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+zdatSM1  <- dat1 %>% dplyr::select("ID","group.factor","ess_total",
+								  "bdi_total", "mcgill_total")
+
+zdatSM2  <- data %>% dplyr::select("ID","ess_total",
+								  "bdi_total", "mcgill_total")
+
+your_data_frame %>%
+    filter(Contact_number == 18445)
+
+subID  <- table(Subs1$ID)
+
+view(subID)
+
+zdatSM2  <- zdatSM1 %>% 
+	filter(Subs1$ID)
 
 
+zdatSM2[setdiff(zdatSM2$ID, Subs1$ID)]
+
+zdatSM1[intersect(zdatSM1$ID, Subs1$ID)]
+
+merge(zdatSM2, Subs1)
 ```
