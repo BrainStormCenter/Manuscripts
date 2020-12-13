@@ -1,0 +1,697 @@
+---
+title: "Forums"
+author: "Jason"
+date: "4/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DESCRIPTIVE tables
+```{r Means-sds, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#		This approximates what I want out of a descriptive table.
+library(dplyr)
+library(tidyr)
+library(glue)
+df <- tibble(
+  ob   = 1:4,
+  num1 = c(1,2,3,3),
+  num2 = c(3,4,4,5),
+  cat1 = sample(c(1,0), 4, replace = TRUE),
+  cat2 = sample(c(1,0), 4, replace = TRUE)
+)
+
+result1 <- bind_rows(
+  
+  df %>% 
+    select(ob, num1, num2) %>%   #select(is.numeric()) requires dplyr 1.0.0
+    pivot_longer(c(-ob)) %>% 
+    group_by(name) %>% 
+    summarize(
+      `Mean (SD)` = glue("{mean(value)} ({sd(value) %>% round(2)})"),
+    ) )#,
+ 
+options(digits=4) 
+result3  <- dat1 %>% 
+	select(group.factor, age_visit_1) %>%
+	group_by(group.factor) %>%
+		summarise(
+			`age (SD)` = mean(age_visit_1,na.rm = TRUE))
+		
+options(digits=4)
+result4  <- dat1 %>% 
+	select(group.factor, age_visit_1) %>%
+	group_by(group.factor) %>%
+		summarise(
+			age = mean(age_visit_1,na.rm = TRUE),
+			SD = sd(age_visit_1, na.rm = TRUE)
+		)
+#)
+
+
+#			  )
+	# summarize(
+	# 		`Mean (SD)` = glue("{mean(age_visit_1)  %>% round(2)}
+	# 						   ({sd(age_visit_1) %>% round(2)})",
+	# 						   na.rm = TRUE)
+	# 	)
+	# 
+
+
+
+
+
+
+
+  df %>%  
+    select(ob, cat1, cat2) %>% 
+    pivot_longer(c(-ob,)) %>%
+    group_by(name) %>% 
+    summarise(
+      `%` = mean(value)
+    )
+  
+) %>% 
+    replace_na(
+      list(
+        `Mean (SD)` = "",
+        `%` = "-"
+      )
+    )
+
+
+
+zz <- df
+
+# result <- 
+bind_rows(
+  
+  zz %>% 
+    select(ob, num1, num2) %>%   #select(is.numeric()) requires dplyr 1.0.0
+    pivot_longer(c(-ob)) %>% 
+    group_by(name) %>% 
+    summarize(
+      `Mean (SD)` = glue("{mean(value)} ({sd(value) %>% round(2)})"),
+    )
+  )
+  
+
+ zz %>% 
+    select(ob, num1, num2) %>%   #select(is.numeric()) requires dplyr 1.0.0
+    pivot_longer(c(-ob))
+
+
+anscombe %>%
+ pivot_longer(everything(),
+   names_to = c(".value", "set"),
+   names_pattern = "(.)(.)"
+ )
+  
+```
+
+```{r tableTest, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+Rmdtabulatemsg <- function(variables, groups, input_dt, round_digits = 2, na.rm = FALSE) {
+  # Create a table of alternating means and (SDs), for the specified variables, with groups as columns.
+  require(data.table)
+
+  # Aggregate means
+  means_dt <- input_dt[,lapply(.SD, mean, na.rm = na.rm), .SDcols = variables, by = groups]
+  means_dt.melted <- melt.data.table(means_dt, id.vars = groups, measure.vars = variables)
+  means_dt.melted$stat <- "mean"
+
+  # Aggregate standard deviations
+  sd_dt <- input_dt[,lapply(.SD, sd, na.rm = na.rm), .SDcols=variables, by=groups]
+  sd_dt.melted <- melt.data.table(sd_dt, id.vars = groups, measure.vars = variables)
+  sd_dt.melted$stat <- "sd" 
+
+  # Merge and cast
+  means_sd_merged_dt <- rbindlist(list(means_dt.melted, sd_dt.melted))
+  means_sd_dt <- dcast.data.table(means_sd_merged_dt, paste("variable", 
+    paste(c(groups, "stat"), collapse=" + "), sep=" ~ "), value.var = "value")
+
+  # Ensure there are the specified number of digits after the decimal
+  cols <- setdiff(names(means_sd_dt), "variable")
+  means_sd_dt[, (cols) := lapply(.SD, format, digits=round_digits, nsmall=round_digits, justify="none"), .SDcols=cols]
+  means_sd_dt[, (cols) := lapply(.SD, trimws), .SDcols=cols]
+
+  # Add in parentheses
+  cols <- names(means_sd_dt)[seq(3, ncol(means_sd_dt), by=2)]
+  means_sd_dt[, (cols) := lapply(.SD, function(x) paste0("(", x, ")")), .SDcols=cols]
+
+  # Add in second row
+  output_table <- rbindlist(list(
+    data.table(t(c("", rep(c("Mean", "(SD)"), (ncol(means_sd_dt)-1)/2)))),
+    means_sd_dt), use.names=FALSE)
+
+  # Rename first row
+  setnames(output_table, colnames(output_table), 
+    gsub("variable", "", (gsub(" sd","", (gsub(" mean", "", (gsub("_"," ", colnames(means_sd_dt)))))))))
+
+  return(output_table)
+}
+```
+
+
+
+## This contains code to and from various forums
+May 3, 2020: Issues with summary functions for bar charts
+head(dput(dat.bar),25)
+
+
+
+```{r bar, eval=TRUE, echo=FALSE, message=FALSE}
+dput(head(dat.bar, 25))
+
+structure(list(ID = structure(1:158, .Label = c("IP001", "IP002", 
+"IP003", "IP004", "IP005", "IP007", "IP008", "IP009", "IP010", 
+"IP011", "IP012", "IP013", "IP015", "IP016", "IP017", "IP019", 
+"IP020", "IP021", "IP023", "IP031", "IP032", "IP034", "IP036", 
+"IP037", "IP038", "IP039", "IP040", "IP041", "IP042", "IP043", 
+"IP044", "IP045", "IP047", "IP048", "IP049", "IP050", "IP051", 
+"IP052", "IP053", "IP054", "IP055", "IP056", "IP058", "IP068", 
+"IP070", "IP078", "IP104", "IP132", "IP133", "IP135", "IP139", 
+"IP141", "IP143", "IP145", "IP146", "IP147", "IP153", "IP155", 
+"IP156", "IP157", "IP158", "IP160", "IP161", "IP162", "IP163", 
+"IP164", "IP165", "IP166", "IP168", "IP169", "IP170", "IP171", 
+"IP172", "IP173", "IP175", "IP176", "IP177", "IP178", "IP179", 
+"IP180", "IP182", "IP183", "IP184", "IP187", "IP188", "IP191", 
+"IP192", "IP193", "IP194", "IP196", "IP197", "IP198", "IP199", 
+"IP200", "IP201", "IP202", "IP203", "IP204", "IP205", "IP206", 
+"IP207", "IP208", "IP209", "IP210", "IP211", "IP213", "IP214", 
+"IP215", "IP216", "IP218", "IP219", "IP220", "IP221", "IP223", 
+"IP225", "IP226", "IP227", "IP228", "IP229", "IP230", "IP231", 
+"IP232", "IP233", "IP234", "IP235", "IP236", "IP237", "IP239", 
+"IP240", "IP241", "IP242", "IP243", "IP244", "IP245", "IP246", 
+"IP248", "IP249", "IP250", "IP252", "IP254", "IP255", "IP256", 
+"IP258", "IP259", "IP260", "IP262", "IP265", "IP266", "IP267", 
+"IP268", "IP269", "IP270", "IP271", "IP272", "IP273", "IP274", 
+"IP276", "IP277"), class = "factor"), group.factor = structure(c(1L, 
+1L, 1L, 1L, 1L, 1L, 2L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+1L, 1L, 1L, 2L, 2L, 1L, 1L, 1L, 1L, 2L, 2L, 1L, 1L, 1L, 2L, 1L, 
+1L, 2L, 1L, 2L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 3L, 2L, 2L, 
+2L, 3L, 2L, 2L, 2L, 3L, 2L, 3L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+3L, 2L, 2L, 2L, 2L, 3L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 3L, 3L, 2L, 
+2L, 2L, 2L, 2L, 2L, 2L, 3L, 2L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 1L, 
+1L, 3L, 1L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 2L, 3L, 2L, 2L, 
+3L, 2L, 3L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 1L, 3L, 1L, 3L, 3L, 1L, 
+3L, 3L, 1L, 1L, 1L, 3L, 1L, 1L, 3L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+3L, 2L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L), .Label = c("HC", 
+"CLBP", "FM", "TRUE"), class = "factor"), bdi_total = c(0, 1, 
+1, 13, 5, 0, 1, 6, 0, 7, 0, 2, 0, 6, 0, 3, 1, 0, 0, 7, 12, 5, 
+7, 0, 2, 8, 1, 9, 12, 4, 1, 0, 0, 1, 1, 0, 25, 0, 0, 13, 1, 5, 
+2, 7, 1, 4, 22, 6, 12, 2, 5, 10, 15, 15, 12, 0, 39, 14, 9, 3, 
+16, 17, 14, 0, 13, 0, 9, 12, 13, 4, 7, 24, 2, 17, 5, 6, 30, 28, 
+10, 25, 1, 15, 14, 15, 14, 1, 11, 17, 3, 18, 13, 29, 13, 12, 
+17, 19, 1, 7, 22, 0, 13, 8, 4, 3, 12, 16, 20, 8, 30, 1, 18, 0, 
+6, 24, 19, 22, 8, 5, 4, 18, 12, 13, 5, 3, 8, 5, 34, 23, 14, 21, 
+5, 1, 0, 0, 24, 0, 0, 8, 4, 5, 2, 6, 10, 0, 4, 11, 41, 16, 15, 
+1, 29, 29, 16, 14, 12, 13, 10, 35), ess_total = c(5, 5, 4, 7, 
+10, 2, 5, 5, 4, 9, 6, 10, 8, 9, 6, 8, 9, 3, 6, 10, 8, 10, 3, 
+0, 10, 6, 6, 6, 9, 6, 6, 4, 3, 5, 3, 6, 6, 5, 1, 1, 3, 11, 3, 
+8, 8, 4, 7, 8, 5, 11, 7, 16, 11, 5, 9, 2, 15, 6, 10, 2, 7, 3, 
+8, 6, 5, 1, 5, 5, 8, 10, 3, 1, 12, 13, 12, 4, 7, 10, 8, 14, 4, 
+9, 6, 11, 2, 6, 5, 1, 10, 8, 2, 10, 7, 6, 7, 11, 9, 9, 3, 3, 
+6, 5, 2, 9, 7, 12, 7, 7, 4, 8, 9, 6, 6, 7, 10, 15, 2, 4, 5, 14, 
+6, 14, 4, 3, 14, 5, 10, 8, 9, 10, 9, 9, 3, 5, 13, 2, 4, 1, 4, 
+2, 5, 3, 13, 8, 7, 10, 9, 11, 9, 8, 10, 8, 12, 6, 14, 3, 6, 18
+), mcgill_total = c(0, 0, 0, 0, 0, 0, 9, 0, 0, 4, 0, 1, 0, 5, 
+0, 0, 0, 0, 0, 38, 34, 16, 0, 0, 0, 5, 2, 14, 0, 0, 0, 25, 0, 
+0, 21, 0, 9, 0, 0, 42, 12, 4, 3, 44, 10, 18, 50, 39, 42, 9, 21, 
+7, 15, 9, 18, 21, 50, 0, 21, 2, 18, 26, 18, 21, 21, 23, 28, 50, 
+7, 7, 16, 12, 10, 67, 39, 43, 39, 44, 50, 43, 6, 47, 20, 13, 
+11, 30, 29, 25, 39, 46, 39, 43, 46, 39, 33, 45, 0, 22, 32, 0, 
+12, 40, 7, 21, 56, 38, 42, 40, 43, 16, 44, 16, 30, 40, 37, 51, 
+24, 19, 41, 40, 20, 36, 38, 0, 3, 0, 49, 44, 0, 36, 43, 0, 0, 
+0, 23, 0, 0, 31, 0, 0, 0, 3, 0, 0, 0, 47, 32, 23, 43, 14, 36, 
+44, 48, 32, 45, 43, 32, 50)), row.names = c(NA, -158L), class = "data.frame")
+
+# ID must be a factor
+dat.bar$ID <- factor(dat.bar$ID) 
+
+#	Convert to long format
+bar.long <- gather(dat.bar, condition, measurement, bdi_total:mcgill_total, factor_key=TRUE )
+
+bar.long.smry <- summarySEwithin(bar.long, measurevar="measurement", withinvars=c("group.factor", "condition"), idvar="ID")
+
+```
+
+
+# CORRELATION PLOTS
+
+```{r CORR-test, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+##		USING GGally		##
+
+library(broom)
+reg <- lm(Sepal.Length ~ Sepal.Width + Petal.Length + Petal.Width, data = iris)
+ggcoef(reg)
+d <- as.data.frame(Titanic)
+reg2 <- glm(Survived ~ Sex + Age + Class, family = binomial, data = d, weights = d$Freq)
+ggcoef(reg2, exponentiate = TRUE)
+ggcoef(
+  reg2, exponentiate = TRUE, exclude_intercept = TRUE,
+  errorbar_height = .2, color = "blue", sort = "ascending"
+)
+
+####
+# small function to display plots only if it's interactive
+p_ <- GGally::print_if_interactive
+
+plotList <- list()
+for (i in 1:6) {
+  plotList[[i]] <- ggally_text(paste("Plot #", i, sep = ""))
+}
+pm <- ggmatrix(
+  plotList,
+  2, 3,
+  c("A", "B", "C"),
+  c("D", "E"),
+  byrow = TRUE
+)
+p_(pm)
+
+pm <- ggmatrix(
+  plotList,
+  2, 3,
+  xAxisLabels = c("A", "B", "C"),
+  yAxisLabels = NULL,
+  byrow = FALSE,
+  showXAxisPlotLabels = FALSE
+)
+p_(pm)
+
+
+data(tips, package = "reshape")
+pm <- ggpairs(tips)
+pm
+
+
+##		USING ggplot.multistats		##
+library(ggplot2)
+# Define the variable used for the stats using z
+ggplot_base <- ggplot(iris, aes(Sepal.Width, Sepal.Length, z = Petal.Width))
+# The default is creating `stat(value)` containing the mean
+ggplot_base + stat_summaries_hex(aes(fill = stat(value)), bins = 5)
+# but you can specify your own stats
+ggplot_base + stat_summaries_hex(
+  aes(fill = stat(median), alpha = stat(n)),
+  funs = c('median', n = 'length'),
+  bins = 5)
+#
+
+###		USING glue
+#		trying to make a table of mean(sd)
+name <- "Fred"
+age <- 50
+anniversary <- as.Date("1991-10-12")
+glue('My name is {name},',
+  'my age next year is {age + 1},',
+  'my anniversary is {format(anniversary, "%A, %B %d, %Y")}.')
+
+
+#
+
+```
+
+```{r LongTEST, eval=TRUE, echo=FALSE, message=FALSE}
+olddata_wide <- read.table(header=TRUE, text='
+ subject sex control cond1 cond2
+       1   M     7.9  12.3  10.7
+       2   F     6.3  10.6  11.1
+       3   F     9.5  13.1  13.8
+       4   M    11.5  13.4  12.9
+')
+
+olddata_wide$subject <- factor(olddata_wide$subject)
+data_long <- gather(olddata_wide, condition, measurement, control:cond2, factor_key=TRUE)
+#
+
+
+wide.data<- read.table(header=TRUE, text='
+ Subject RoundMono SquareMono RoundColor SquareColor
+       1        41         40         41          37
+       2        57         56         56          53
+       3        52         53         53          50
+       4        49         47         47          47
+       5        47         48         48          47
+       6        37         34         35          36
+       7        47         50         47          46
+       8        41         40         38          40
+       9        48         47         49          45
+      10        37         35         36          35
+      11        32         31         31          33
+      12        47         42         42          42
+')
+
+data_long <- melt(data=wide.data, id.var="Subject",
+                  measure.vars=c("RoundMono", "SquareMono", "RoundColor", "SquareColor"),
+                  variable.name="Condition")
+names(data_long)[names(data_long)=="value"] <- "Time"
+
+# Split Condition column into Shape and ColorScheme
+data_long$Shape <- NA
+data_long$Shape[grepl("^Round",  data_long$Condition)] <- "Round"
+data_long$Shape[grepl("^Square", data_long$Condition)] <- "Square"
+data_long$Shape <- factor(data_long$Shape)
+
+data_long$ColorScheme <- NA
+data_long$ColorScheme[grepl("Mono$",  data_long$Condition)] <- "Monochromatic"
+data_long$ColorScheme[grepl("Color$", data_long$Condition)] <- "Colored"
+data_long$ColorScheme <- factor(data_long$ColorScheme, levels=c("Monochromatic","Colored"))
+
+# Remove the Condition column now
+data_long$Condition <- NULL
+
+datac <- summarySEwithin(data_long, measurevar="Time", withinvars=c("Shape","ColorScheme"), idvar="Subject")
+
+```
+
+
+
+# HELPER FUNCTIONS
+```{r HELPER-fcns, eval=TRUE, echo=FALSE, message=FALSE}
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+
+
+## Norms the data within specified groups in a data frame; it normalizes each
+## subject (identified by idvar) so that they have the same mean, within each group
+## specified by betweenvars.
+##   data: a data frame.
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+normDataWithin <- function(data=NULL, idvar, measurevar, betweenvars=NULL,
+                           na.rm=FALSE, .drop=TRUE) {
+    library(plyr)
+
+    # Measure var on left, idvar + between vars on right of formula.
+    data.subjMean <- ddply(data, c(idvar, betweenvars), .drop=.drop,
+     .fun = function(xx, col, na.rm) {
+        c(subjMean = mean(xx[,col], na.rm=na.rm))
+      },
+      measurevar,
+      na.rm
+    )
+
+    # Put the subject means with original data
+    data <- merge(data, data.subjMean)
+
+    # Get the normalized data in a new column
+    measureNormedVar <- paste(measurevar, "_norm", sep="")
+    data[,measureNormedVar] <- data[,measurevar] - data[,"subjMean"] +
+                               mean(data[,measurevar], na.rm=na.rm)
+
+    # Remove this subject mean column
+    data$subjMean <- NULL
+
+    return(data)
+}
+
+
+
+## Summarizes data, handling within-subjects variables by removing inter-subject variability.
+## It will still work if there are no within-S variables.
+## Gives count, un-normed mean, normed mean (with same between-group mean),
+##   standard deviation, standard error of the mean, and confidence interval.
+## If there are within-subject variables, calculate adjusted values using method from Morey (2008).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   betweenvars: a vector containing names of columns that are between-subjects variables
+##   withinvars: a vector containing names of columns that are within-subjects variables
+##   idvar: the name of a column that identifies each subject (or matched subjects)
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=NULL,
+                            idvar=NULL, na.rm=FALSE, conf.interval=.95, .drop=TRUE) {
+
+  # Ensure that the betweenvars and withinvars are factors
+  factorvars <- vapply(data[, c(betweenvars, withinvars), drop=FALSE],
+    FUN=is.factor, FUN.VALUE=logical(1))
+
+  if (!all(factorvars)) {
+    nonfactorvars <- names(factorvars)[!factorvars]
+    message("Automatically converting the following non-factors to factors: ",
+            paste(nonfactorvars, collapse = ", "))
+    data[nonfactorvars] <- lapply(data[nonfactorvars], factor)
+  }
+
+  # Get the means from the un-normed data
+  datac <- summarySE(data, measurevar, groupvars=c(betweenvars, withinvars),
+                     na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Drop all the unused columns (these will be calculated with normed data)
+  datac$sd <- NULL
+  datac$se <- NULL
+  datac$ci <- NULL
+
+  # Norm each subject's data
+  ndata <- normDataWithin(data, idvar, measurevar, betweenvars, na.rm, .drop=.drop)
+
+  # This is the name of the new column
+  measurevar_n <- paste(measurevar, "_norm", sep="")
+
+  # Collapse the normed data - now we can treat between and within vars the same
+  ndatac <- summarySE(ndata, measurevar_n, groupvars=c(betweenvars, withinvars),
+                      na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Apply correction from Morey (2008) to the standard error and confidence interval
+  #  Get the product of the number of conditions of within-S variables
+  nWithinGroups    <- prod(vapply(ndatac[,withinvars, drop=FALSE], FUN=nlevels,
+                           FUN.VALUE=numeric(1)))
+  correctionFactor <- sqrt( nWithinGroups / (nWithinGroups-1) )
+
+  # Apply the correction factor
+  ndatac$sd <- ndatac$sd * correctionFactor
+  ndatac$se <- ndatac$se * correctionFactor
+  ndatac$ci <- ndatac$ci * correctionFactor
+
+  # Combine the un-normed means with the normed results
+  merge(datac, ndatac)
+}
+```
+
+
+
+
+```{r ---> Overall ANOVA with PostHoc testing, eval=TRUE, echo=TRUE}
+library(gt)
+library(tidyverse)
+library(reprex)
+library(here)
+here()
+dr_here(show_reason = FALSE)
+#	PostHoc DOES WORK
+
+# construct anova model for each column of dat[, my_outcome_variables]
+z_dat <- iris
+
+z_model_summaries <- z_dat[1:4] %>%
+  purrr::map(~ aov(.x ~ Species, data = z_dat))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+
+
+
+```
+
+
+
+```{r ---> RETURN TABLES OF RESULTS}
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+GetModels <- function(l) l$model
+z_Models <- purrr::map(z_model_summaries, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+head(z_Models)
+
+##		TABLE OF OVERALL EFFECTS
+filter(z_Models,  term !="Residuals") %>%
+	dplyr::select("Name" , "p.value")  %>%
+	gt(rowname_col = "Name") %>%
+	tab_header(
+		title = md("Main effect of group"))  %>% 
+	fmt_number(
+		columns = vars("p.value"),
+		decimals = 4
+	)
+
+
+####		RETRIEVE POSTHOC COMPARISONS		####
+GetTukeys <- function(m) m$tukey
+z_Tukeys  <- purrr::map(z_model_summaries, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+head(z_Tukeys)
+
+####		SIMPLE RENAME		####
+names(z_Tukeys)[names(z_Tukeys) == 'Name'] <- 'Var'
+names(z_Tukeys)[names(z_Tukeys) == 'estimate'] <- 'diff'
+
+####		GT TABLE OF POSTHOC COMPARISONS
+select(z_Tukeys, -term) %>% 
+	gt(groupname_col = "Var") %>% 
+	tab_header(
+		title = md("*PostHoc*")
+		) %>% 
+	tab_stubhead(label = "Group Comps") %>% 
+	fmt_number(
+		columns = vars("diff", "conf.low", "conf.high"),
+		decimals = 2)  %>% 
+	fmt_number(#,
+		columns = vars("adj.p.value"),
+		decimals = 4)
+
+
+
+
+```
+
+
+```{r ---> kable-1}
+suppressPackageStartupMessages(library(tidyverse))
+library(kableExtra)
+
+formatme <- tribble(
+  ~estimate, ~P_value, 
+   14.93423,  1.064325e-173, 
+   -5.58189,  3.863223e-08 , 
+   -4.00146,  0.01792431   , 
+   -1.64129,  0.1321123    , 
+   -5.32435,  1.282435e-06 , 
+   -4.81021,  1.634358e-05 , 
+   -0.97118,  0.373213     , 
+   -2.12204,  0.051729     , 
+   -1.88072,  0.1          , 
+   -1.71032,  0.116
+)
+
+
+
+
+
+# formatme %>% 
+#   mutate(
+#     P_value = cell_spec(
+#       if_else(
+#         P_value < 1e-02, 
+#         formatC(P_value, digits = 2, format = "e"),
+#         formatC(P_value, digits = 2, format = "f")
+#       ),
+#       format = "html",
+#       color = ifelse(P_value <= 0.05, yes = "red", no = "blue"),
+#       escape = FALSE)) %>%
+#   mutate_if(
+#     is.numeric, 
+#     function(x) {
+#       cell_spec(
+#         formatC(x, digits = 2, format = "f", drop0trailing = FALSE),
+#         format = "html"
+#       )
+#     }
+#   )
+
+
+# format2 <- formatme 
+
+formatme %>%
+	mutate(
+		P_value = if_else(
+			P_value < 0.01,
+			formatC(P_value, digits = 2, format = "e"),
+			formatC(P_value, digits = 2, format = "f", drop0trailing = FALSE)
+		)
+	) %>%
+	mutate_if(
+		is.numeric,
+		function(x) {
+			formatC(x, digits = 2, format = "f", drop0trailing = FALSE)
+		}
+	)
+
+
+
+kable(mtcars[1:10, 1:6], caption = "Group Rows") %>%
+  kable_styling("striped", full_width = F) %>%
+  pack_rows(index = c(" " = 0, "Group 1" = 2, "Group 2" = 3))
+
+kable(mtcars[1:10, 1:6], caption = "Group Rows") %>%
+  kable_styling("striped", full_width = F) %>%
+  pack_rows(index = c(" " = 2, "Group 1" = 2, "Group 2" = 3))
+
+```
+
+
+```{r ---> kable2 }
+
+
+# format2 %>% 
+#   mutate(
+#     P_value = cell_spec(
+#       if_else(
+#         P_value < 1e-02, 
+#         formatC(P_value, digits = 2, format = "e"),
+#         formatC(P_value, digits = 2, format = "f")
+#       ),
+#       format = "html",
+#       color = ifelse(P_value <= 0.05, yes = "red", no = "blue"),
+#       escape = F
+#     )
+#   ) %>%
+#   mutate_if(
+#     is.numeric, 
+#     function(x) {
+#       cell_spec(
+#         formatC(x, digits = 2, format = "f", drop0trailing = FALSE),
+#         format = "html"
+#       )
+#     }
+#   )
+
+```

@@ -46,7 +46,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-```{r Libraries, eval=TRUE, echo=FALSE, results=FALSE, collapse=TRUE, message=FALSE}
+```{r Libraries, eval=TRUE, echo=TRUE, results=FALSE, collapse=TRUE, message=FALSE}
 # library(multcomp)
 # library(knitr)
 # library(readr)
@@ -152,7 +152,7 @@ corr.data = function(data) {
 
 # DATA
 Import data from GitHub
-```{r Import-data, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+```{r Import-data, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
 #		IMPORT DATA FROM GITHUB
 data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
 data <- as_tibble(data)
@@ -174,7 +174,7 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 
 
 ## Subset
-```{r DataSubset, eval=TRUE, echo=FALSE, message=FALSE}
+```{r DataSubset, eval=TRUE, echo=TRUE, message=FALSE}
 #	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
 dat0 <- merge(data, subs)
 dat0 <- as_tibble(dat0)
@@ -183,7 +183,7 @@ dat0 <- as_tibble(dat0)
 
 
 
-```{r Clean-data, eval=TRUE, echo=FALSE, message=FALSE, tidy=TRUE, comment=""}
+```{r Clean-data, eval=TRUE, echo=TRUE, message=FALSE, tidy=TRUE, comment=""}
 #		CLEANING AND PRESERVING ORIGINAL DATA
 
 data %>% count(group)
@@ -216,7 +216,7 @@ dat1 %>% count(group.factor)
 * The global PSQI score is then calculated by totaling the seven component scores, providing an overall score ranging from 0 to 21, where lower scores denote a healthier sleep quality.   
 * A PSQI Global score ≥ 5 is the clinical cutoff score (i.e., sleep problems)
 
-```{r PSQI-Data, eval=TRUE, echo=FALSE, message=FALSE}
+```{r PSQI-Data, eval=TRUE, echo=TRUE, message=FALSE}
 #		PSQI DATA
 # gather psqi variables into separate data frame
 dat.psqi <- dat1[,c(1,425,769,
@@ -291,7 +291,7 @@ dat.psqi$psqi_5othera <- dat.psqi$psqi_5othera %>% replace_na(0)
 ```
 
 
-```{r TIB, eval=TRUE, echo=FALSE}
+```{r TIB, eval=TRUE, echo=TRUE}
 #		Estimate time in bed (TIB)
 
 dat.psqi$bedtime  <- dat.psqi$psqi_1
@@ -819,7 +819,7 @@ dat.pain <- dat.sm %>%
 ## VARIANCE CHECK
 Which variable(s) in the dat.sm data has potential issues with variances?
 
-```{r QA-DATA, eval=TRUE, echo=FALSE, comment=""}
+```{r QA-DATA, eval=TRUE, echo=TRUE, comment=""}
 # dat.sm.smry <- by(dat.sm, dat.sm$group.factor, summary, na.rm = TRUE)
 # 
 # summarise(dat.sm)
@@ -844,8 +844,8 @@ nearZeroVar(dat.sm,
 
 
 # SAMPLE DESCRIPTIVES
-Group by sex for overall sample.
-```{r Demographics, eval=TRUE, echo=FALSE}
+## Group by sex for overall sample.
+```{r Demographics, eval=TRUE, echo=TRUE}
 #		GROUP BY SEX INFORMATION
 group_by_sex <- dat1 %>%
 	group_by(group.factor, sex.factor) %>%
@@ -870,8 +870,65 @@ gpsex1 %>%
 ```
 
 
+## Group by age for overall sample.
+```{r Gp_by_age, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+newdf <- df %>% filter(party %in% c('R','D')) %>%
+  group_by(termstart,party) %>% summarise(MeanAge=mean(age,na.rm=T)) %>%
+  pivot_wider(names_from = party,values_from=MeanAge)
+
+newdf <- dat1 %>% filter(group.factor %in% c('HC','CLBP', 'FM')) %>%
+	group_by(group.factor) %>%
+	summarise(MeanAge=mean(age_visit_1,na.rm=T), 
+			  ageSD=sd(age_visit_1, na.rm = T)) 
+
+
+#%>%
+	pivot_longer(newdf,
+				 group.factor,
+				 names_from = group.factor,values_from=MeanAge)
+#	pivot_wider(names_from = group.factor,values_from=MeanAge)
+
+
+
+
+
+```
+
+
+
+```{r AgeMeans-SDs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+means.age <- dat1 %>% dplyr::select("group.factor", "age_visit_1") 
+
+means.age  <- filter(means.age, group.factor != TRUE)
+
+meansAge.stats <- describeBy(means.age,
+							group = "group.factor",
+							interp = FALSE,
+							skew = FALSE,
+							ranges = FALSE,
+							fast = NULL)
+
+meansAge.stats 
+
+# means.stats <- filter(means.stats,  group1 !="TRUE")
+
+# means.stats99
+# 
+# means.stats99 %>% kable(align = "c", caption = "test") %>% 
+# kable_styling(c("striped", "bordered"), full_width = F) %>% 
+# 	# add_header_above(c(" ", "Sex" = 2, "")) %>%
+# 	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+# 	row_spec(4, bold = T, background = "lightgrey")# %>% 
+# 	# column_spec(4, bold = T, background = "lightgray")
+
+	
+	
+```
+
+
+
 Means and SDs for each group.
-```{r Means-SDs, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+```{r Means-SDs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
 means.data <- dat1 %>% dplyr::select("group.factor",
                        "slpQual", "slpLat", 
                        "slpDur", "slpEff", 
@@ -1439,7 +1496,7 @@ ggboxplot(dat1,
 
 
 # ANOVA (Main effect of group)
-```{r ANOVA-scaleddata, eval=TRUE, echo=FALSE, message=FALSE}
+```{r ANOVA-scaleddata, eval=TRUE, echo=TRUE, message=FALSE}
 # construct anova model for each column of dat1[, my_outcome_variables]
 model_summaries <- dat1[,c("slpQual", "slpLat", "slpDur",
 						   "slpEff", "slpDist","slpMeds",
@@ -1494,7 +1551,7 @@ Models2 %>%
 ```
 
 
-```{r ANOVA-rawdata, eval=FALSE, echo=FALSE, message=FALSE}
+```{r ANOVA-rawdata, eval=FALSE, echo=TRUE, message=FALSE}
 #		USING PSQI RAW COMPONENT SCORES
 # construct anova model for each column of dat1[, my_outcome_variables]
 model_summary_raw <- dat1[,c("slpQualraw", "slpLatraw", "slpDurraw",
@@ -1552,7 +1609,7 @@ Models3 %>%
 
 
 ## POSTHOC 
-```{r PostHoc-Scaled, eval=TRUE, echo=FALSE, message=FALSE}
+```{r PostHoc-Scaled, eval=TRUE, echo=TRUE, message=FALSE}
 GetTukeys <- function(m) m$tukey
 Tukeys  <- purrr::map(model_summaries, GetTukeys)  %>% 
 	purrr::map_dfr(broom::tidy, .id = "Name")
@@ -1603,7 +1660,7 @@ select(Tukeys, -term, -Var) %>%
 ```
 
 
-```{r PostHoc-Raw, eval=FALSE, echo=FALSE, message=FALSE}
+```{r PostHoc-Raw, eval=FALSE, echo=TRUE, message=FALSE}
 # GetTukeys <- function(m) m$tukey
 Tukeys3  <- purrr::map(model_summary_raw, GetTukeys)  %>% 
 	purrr::map_dfr(broom::tidy, .id = "Name")
