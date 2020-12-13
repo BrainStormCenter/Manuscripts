@@ -43,13 +43,14 @@ Question this study addresses:
 # START
 ```{r setup, include=FALSE, comment=""}
 knitr::opts_chunk$set(echo = TRUE)
-
 ```
 
+# LIBRARIES
 ```{r Libraries, eval=TRUE, echo=TRUE, results=FALSE, collapse=TRUE, message=FALSE}
 # library(multcomp)
 # library(knitr)
 # library(readr)
+library(formatR)
 library(caret)
 library(kableExtra)
 library(psych)
@@ -286,8 +287,8 @@ dat.psqi$psqi_5othera <- dat.psqi$psqi_5othera %>% replace_na(0)
 ####			PSQI TIB SANITY CHECK			####
 # max(dat1$TIB)
 
-#colnames(dat1)
-# z <- data[which(dat.psqi$TIB > 19, ) ]
+colnames(dat1)
+da# z <- data[which(dat.psqi$TIB > 19, ) ]
 ```
 
 
@@ -845,7 +846,7 @@ nearZeroVar(dat.sm,
 
 # SAMPLE DESCRIPTIVES
 ## Group by sex for overall sample.
-```{r Demographics, eval=TRUE, echo=TRUE}
+```{r Demographics, eval=FALSE, echo=TRUE}
 #		GROUP BY SEX INFORMATION
 group_by_sex <- dat1 %>%
 	group_by(group.factor, sex.factor) %>%
@@ -871,7 +872,7 @@ gpsex1 %>%
 
 
 ## Group by age for overall sample.
-```{r Gp_by_age, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+```{r Gp_by_age, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
 newdf <- df %>% filter(party %in% c('R','D')) %>%
   group_by(termstart,party) %>% summarise(MeanAge=mean(age,na.rm=T)) %>%
   pivot_wider(names_from = party,values_from=MeanAge)
@@ -1498,7 +1499,7 @@ ggboxplot(dat1,
 # ANOVA (Main effect of group)
 ```{r ANOVA-scaleddata, eval=TRUE, echo=TRUE, message=FALSE}
 # construct anova model for each column of dat1[, my_outcome_variables]
-model_summaries <- dat1[,c("slpQual", "slpLat", "slpDur",
+model_summaries <- dat1[,c("age_visit_1","slpQual", "slpLat", "slpDur",
 						   "slpEff", "slpDist","slpMeds",
 						   "slpDayFcn", "psqi_Global","ess_total",
 						   "isi_total", "bdi_total", "mcgill_total",
@@ -1554,7 +1555,7 @@ Models2 %>%
 ```{r ANOVA-rawdata, eval=FALSE, echo=TRUE, message=FALSE}
 #		USING PSQI RAW COMPONENT SCORES
 # construct anova model for each column of dat1[, my_outcome_variables]
-model_summary_raw <- dat1[,c("slpQualraw", "slpLatraw", "slpDurraw",
+model_summary_raw <- dat1[,c("age_visit_1", "slpQualraw", "slpLatraw", "slpDurraw",
 						   "slpEffraw", "slpDistraw","slpMedsraw",
 						   "slpDayFcnraw", "psqi_Globalraw","ess_total",
 						   "isi_total", "bdi_total", "mcgill_total",
@@ -1640,7 +1641,9 @@ select(Tukeys, -term, -Var) %>%
 	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
 	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
 	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
-	pack_rows(index = c(" " = 0, "Sleep Quality" = 3, #)) #, 
+	pack_rows(index = c(" " = 0, 
+						"age_visit_1" = 3,
+						"Sleep Quality" = 3,
 						"Sleep Latency" = 3,
 						"Sleep Duration" = 3,
 						"Sleep Efficacy" = 3,
@@ -1691,7 +1694,9 @@ select(Tukeys3, -term, -Var) %>%
 	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
 	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
 	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
-	pack_rows(index = c(" " = 0, "Sleep Quality raw" = 3, 
+	pack_rows(index = c(" " = 0, 
+						"age_visit_1" = 3,
+						"Sleep Quality raw" = 3, 
 						"Sleep Latency raw" = 3,
 						"Sleep Duration raw" = 3,
 						"Sleep Efficacy raw" = 3,
