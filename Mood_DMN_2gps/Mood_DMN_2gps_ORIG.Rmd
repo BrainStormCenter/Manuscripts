@@ -1,0 +1,1967 @@
+---
+title: "Mood and DMN 2gps"
+author: "Jason"
+created: "16/03/2020"
+modified: "12/11/2020"
+output: 
+  html_document: 
+    toc: yes
+    number_sections: yes
+---
+
+***
+
+# OVERVIEW
+Question this study addresses:
+
+* are there any factors that differentiate healthy controls (HC) and chronic low back pain (CLBP) patients?
+
+* Measures analyzed  
+  * Pittsburg Sleep Questionnaire  
+  * Epsworth Sleepiness Scale  
+  * Insomnia Severity Index  
+  * McGill Pain Questionnaire  
+  * Beck Depression Inventory  
+
+***
+
+**NOTE: THE ANALYSES CONTAINED HEREIN WILL BE FOR A MANUSCRIPT BASED ON APS 2017.**  
+**ADDITIONAL ANALYSES AND RESULTS FOR THE POSTER WILL BE IN A DIFFERENT FILE.**
+
+***FIX THE TEXT BELOW***
+
+## ABSTRACT
+###  Title  
+**Significant differences in sleep and depression among chronic pain groups: Implications for patient education**  
+
+###  Purpose  
+
+
+***
+
+
+# START
+```{r setup, include=FALSE, comment=""}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# LIBRARIES
+```{r Libraries, eval=TRUE, echo=TRUE, results=FALSE, collapse=TRUE, message=FALSE}
+# library(multcomp)
+# library(knitr)
+# library(readr)
+library(formatR)
+library(caret)
+library(kableExtra)
+library(psych)
+library(corrplot)
+library(janitor)
+library(ggpubr)
+library(ggsignif)
+library(plyr)
+library(reshape2)
+library(tidyverse)
+library(reprex)
+library(here)
+here()
+dr_here(show_reason = FALSE)
+
+```
+
+```{r Functions, eval=TRUE, echo=FALSE, message=FALSE}
+####  different color series		####
+col1 <- colorRampPalette(c("#7F0000", "red", "#FF7F00",
+						   "yellow", "white","cyan",
+						   "#007FFF", "blue","#00007F"))
+col2 <- colorRampPalette(c("#67001F", "#B2182B",
+						   "#D6604D", "#F4A582",
+						   "#FDDBC7", "#FFFFFF",
+						   "#D1E5F0", "#92C5DE",
+						   "#4393C3", "#2166AC", 
+						   "#053061"))
+col3 <- colorRampPalette(c("red", "white", "blue"))
+col4 <- colorRampPalette(c("#7F0000", "red", "#FF7F00", 
+						   "yellow", "#7FFF7F",
+						   "cyan", "#007FFF", "blue",
+						   "#00007F"))
+wb <- c("white", "black")
+
+####		DATE VARIABLE		####
+currentDate <- format(Sys.time(), "%F_%H-%M")
+
+####		APPEND DATE TO STRING		####
+date.time.append <- function(str, sep = '_', date.format ="%Y_%m_%d_%H_%M_%S") {
+stopifnot(is.character(str))
+return(paste(str, format(Sys.time(), date.format), sep = sep))  
+}
+
+# 		TO USE THIS FUNCTION JUST ADD A STRING WITHIN THE PARENTHESESSS AS BELOW
+# 		date.time.append("fileName")
+
+
+####		Function to get correletions and p.values in a "long" data frame		####
+corr.data = function(data) {
+  
+  # Get correlations
+  cor.vals = cor(data)
+  
+  # Get p-values
+  cor.p = cor.mtest(data, conf.level = 0.95)$p
+  rownames(cor.p) = rownames(cor.vals)
+  colnames(cor.p) = colnames(cor.vals)
+  
+  cbind(rowvars=rownames(cor.vals), data.frame(cor.vals)) %>% 
+  	gather(colvars, corr, -rowvars) %>% 
+  	left_join(cbind(rowvars=rownames(cor.p), data.frame(cor.p)) %>% 
+  			  	gather(colvars, p.value, -rowvars))
+}
+
+##		END
+```
+
+
+```{r data prep, eval=FALSE, echo=FALSE}
+####	THIS IS COMPLETED FOR THE DATA USED HERE AS OF April 23, 2020 		####
+####		THIS DOESN’T NEED TO BE DONE FOR THE MOOD MANUSCRIPTS
+
+##				NOTE			##
+# Subject 248 WAKE TIME NEEDS TO BE CHANGED TO AM FROM PM
+# THIS IS VERY VERY IMPORTANT
+
+#		THIS SECTION PREPARED THE ORIGINAL DATA FOR SUBSEQUENT USE
+
+#	This reads the files created by RedCap
+# source('ImagingPsychometrics-BradPTConference_R_2020-03-16_1300.r')
+# #		RENAME VARIABLE
+# names(data)[names(data) == 'participant_id'] <- 'ID'
+# # names(data)[names(data) == 'psqi_1']  <- 'psqi.bedtime'
+# # names(data)[names(data) == 'psqi_1a.factor'] <- 'psqi.bt.sleep'
+# # names(data)[names(data) == 'psqi_3'] <- 'psqi.waketime'
+# # names(data)[names(data) == 'psqi_3a.factor'] <- 'psqi.wt.wake'
+# # 
+# #		WRITE NEW DATASET
+# write_csv(data, "PT_data_13042020.csv",
+# 		  na = "NA", append = FALSE,
+# 		  col_names = TRUE, quote_escape = "double")
+
+# 
+# 
+
+
+```
+
+
+# DATA
+Import data from GitHub
+```{r Import-data, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+#		IMPORT DATA FROM GITHUB
+data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
+data <- as_tibble(data)
+
+# 'https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
+#https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv
+
+# Mood_DMN_2gps/behavioral_data_13042020.csv
+
+```
+
+Import Subs list from GitHub
+```{r Import_Subs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+subs <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/SubjectList_2020_12_11_v1.csv'), header = TRUE)
+subs <- as_tibble(subs)
+subs <- subs %>% dplyr::select("ID") # has imaging data
+
+```
+
+```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#	LIST ALL THE VARIABLES IN THE DATA SET
+varNames <- colnames(dat0)
+```
+
+## Subset
+```{r DataSubset, eval=TRUE, echo=TRUE, message=FALSE}
+#	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
+dat0 <- merge(data, subs)
+dat0 <- as_tibble(dat0)
+```
+
+
+
+
+```{r Clean-data, eval=TRUE, echo=TRUE, message=FALSE, tidy=TRUE, comment=""}
+#		CLEANING AND PRESERVING ORIGINAL DATA
+
+data %>% count(group)
+dat1  <- filter(dat0, group != 0, group != "NA", dat0$bdi1 != "NA")
+dat1$group.factor = factor(dat1$group,levels=c("1","2","3"))
+levels(dat1$group.factor)=c("HC","CLBP","FM", na.rm = TRUE)
+# names(dat1)[names(dat1) == 'gp.fct'] <- 'group.factor'
+#		REPLACE HC McGILL TOTAL "NA" WITH 0
+dat1$mcgill_total  <- coalesce(dat1$mcgill_total, 0L)
+
+##		CLEAN ESS BY REMOVING "NA"		##
+dat1   <- filter(dat1, ess_total != "NA")
+
+##		CHANGE VARIABLE TYPE		##
+dat1$ess_total <- as.numeric(dat1$ess_total)
+dat1$bdi_total <- as.numeric(dat1$bdi_total)
+dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
+
+##						ISI					##
+#		The Insomnia Severity Index score "isi_total" is already computed
+
+
+##		REDUCE GROUPS TO JUST HC AND CLBP		##
+#dat1   <- filter(dat1, group.factor != "FM")
+
+##		FINAL SUBJECT COUNT		##
+dat1 %>% count(group.factor)
+
+##						END						##
+```
+
+
+## PSQI
+* The global PSQI score is then calculated by totaling the seven component scores, providing an overall score ranging from 0 to 21, where lower scores denote a healthier sleep quality.   
+* A PSQI Global score ≥ 5 is the clinical cutoff score (i.e., sleep problems)
+
+```{r PSQI-Data, eval=TRUE, echo=TRUE, message=FALSE}
+#		PSQI DATA
+# gather psqi variables into separate data frame
+dat.psqi <- dat1[,c(1,425,769,
+					  grep("pittsburgh", colnames(dat1)),
+					  grep("psqi", colnames(dat1)))]
+#grep("timestamp", colnames(dat.raw))
+
+# colnames(dat.psqi)
+# label(dat.psqi)
+# view(dat.psqi)
+
+#	REORGANIZE VARIABLES
+dat.psqi <- dat.psqi %>% select(1:7,43,everything()) 
+dat.psqi <- dat.psqi %>% select(1:11,44,everything()) 
+dat.psqi <- dat.psqi %>% select(1:14,45,everything()) 
+dat.psqi <- dat.psqi %>% select(1:16,46,everything()) 
+dat.psqi <- dat.psqi %>% select(1:18,47,everything())
+dat.psqi <- dat.psqi %>% select(1:20,48,everything())
+dat.psqi <- dat.psqi %>% select(1:22,49,everything())
+dat.psqi <- dat.psqi %>% select(1:24,50,everything())
+dat.psqi <- dat.psqi %>% select(1:26,51,everything())
+dat.psqi <- dat.psqi %>% select(1:28,52,everything())
+dat.psqi <- dat.psqi %>% select(1:30,53,everything())
+dat.psqi <- dat.psqi %>% select(1:32,54,everything())
+dat.psqi <- dat.psqi %>% select(1:35,55,everything())
+dat.psqi <- dat.psqi %>% select(1:37,56,everything())
+dat.psqi <- dat.psqi %>% select(1:39,57,everything())
+dat.psqi <- dat.psqi %>% select(1:41,psqi_8b.factor,
+								psqi_9, psqi_9.factor,
+								everything())
+dat.psqi <- dat.psqi %>% select(1:45,
+								psqi_10.factor,
+								psqi_10a, psqi_10a.factor,
+								psqi_10b, psqi_10b.factor,
+								psqi_10c, psqi_10c.factor,
+								psqi_10d, psqi_10d.factor,
+								psqi_10e, 
+								psqi_10e1, psqi_10e1.factor,
+								everything())
+
+dat.psqi <- dat.psqi %>% select(1:2,group.factor,everything())
+
+
+#### 			chr to num, eval=TRUE, echo=FALSE}			####
+dat.psqi$psqi_2 <- as.numeric(dat.psqi$psqi_2)
+dat.psqi$psqi_4 <- as.numeric(dat.psqi$psqi_4)
+dat.psqi$psqi_5a <- as.numeric(dat.psqi$psqi_5a)
+dat.psqi$psqi_5b <- as.numeric(dat.psqi$psqi_5b)
+dat.psqi$psqi_5c <- as.numeric(dat.psqi$psqi_5c)
+dat.psqi$psqi_5d <- as.numeric(dat.psqi$psqi_5d)
+dat.psqi$psqi_5e <- as.numeric(dat.psqi$psqi_5e)
+dat.psqi$psqi_5f <- as.numeric(dat.psqi$psqi_5f)
+dat.psqi$psqi_5g <- as.numeric(dat.psqi$psqi_5g)
+dat.psqi$psqi_5h <- as.numeric(dat.psqi$psqi_5h)
+dat.psqi$psqi_5i <- as.numeric(dat.psqi$psqi_5i)
+dat.psqi$psqi_5othera <- as.numeric(dat.psqi$psqi_5othera)
+dat.psqi$psqi_7 <- as.numeric(dat.psqi$psqi_7)
+dat.psqi$psqi_8a <- as.numeric(dat.psqi$psqi_8a)
+dat.psqi$psqi_9 <- as.numeric(dat.psqi$psqi_9)
+dat.psqi$psqi_component1 <- as.numeric(dat.psqi$psqi_component1)
+
+
+#		REPLACE "NA" WITH 0
+dat.psqi$psqi_5othera <- dat.psqi$psqi_5othera %>% replace_na(0)
+
+
+####			PSQI TIB SANITY CHECK			####
+# max(dat1$TIB)
+
+colnames(dat1)
+da# z <- data[which(dat.psqi$TIB > 19, ) ]
+```
+
+
+```{r TIB, eval=TRUE, echo=TRUE}
+#		Estimate time in bed (TIB)
+
+dat.psqi$bedtime  <- dat.psqi$psqi_1
+dat.psqi$bt.sleep <- dat.psqi$psqi_1a.factor
+dat.psqi$waketime <- dat.psqi$psqi_3
+dat.psqi$wt.wake <- dat.psqi$psqi_3a.factor
+
+#		FOR FORUM HELP VERSION #1
+#		GOING TO SLEEP AND WAKING UP ON THE SAME DAY RESULTS IN 24+ HOURS
+dat.psqi <- dat.psqi %>%
+	mutate_all(.funs = as.character) %>%
+	mutate_at(.vars = c("bt.sleep", "wt.wake"),
+			  .funs = ~ gsub(pattern = ".",
+			  			   replacement = "",
+			  			   x = .x,
+			  			   fixed = TRUE)) %>%
+	mutate(Sleep = as.POSIXct(x = paste(bedtime, bt.sleep),
+							  format = "%I:%M %p"),
+		   Wake = as.POSIXct(x = paste(waketime, wt.wake),
+		   				  format = "%I:%M %p") +
+		   	as.difftime(tim = 1, units = "days"),
+		   `Time in bed` = Wake - Sleep) # TIB version 1
+
+#		CRUDE FIX FOR THE 24+ HOUR ISSUE
+dat.psqi$TIB  <- as.numeric(dat.psqi$`Time in bed`)   # TIB version 2
+
+# round(dat.psqi$TIB  <- if_else(dat.psqi$TIB < 24,
+# 							   dat.psqi$TIB,
+# 							   dat.psqi$TIB - 24), 2)
+
+# 
+# dat.psqi$TIB2  <- if_else(dat.psqi$TIB < 24,
+# 							   dat.psqi$TIB,
+# 							   dat.psqi$TIB - 24) # TIB version 3
+# 
+# 
+
+
+# ###			Second version from forum		###
+# dat.psqi <- dat.psqi %>%
+#   mutate(Sleep = if_else(
+#   	bt.sleep == "PM", true = as.POSIXct(x = paste(bedtime, bt.sleep), 
+#   										format = "%I:%M %p"), # time in current date
+#   	false = as.POSIXct(x = paste(bedtime, bt.sleep), 
+#   					   format = "%I:%M %p") + 
+#   		as.difftime(tim = 1, units = "days")), # next day for times at/after midnight
+#          Wake = as.POSIXct(x = paste(waketime, wt.wake),
+#          				  format = "%I:%M %p") +
+#   		as.difftime(tim = 1, units = "days"), # time in current date plus one day, equivalently time in next day
+#   	`Time Difference` = difftime(time1 = Wake,
+#   								 time2 = Sleep,
+#   								 units = "hours")) %>%  # difference of the two times, guaranteed to be in [0, 24)
+# 	print(width = Inf) # TIB version 4
+# 
+# 
+# dat.psqi$TIB <- dat.psqi$`Time Difference`
+# 
+# dat.psqi <- dat.psqi %>% relocate(`Time Difference`, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(`TIB`, .after = last_col())
+# dat.psqi <- dat.psqi %>% relocate(`Time in bed`, .after = last_col())
+# dat.psqi <- dat.psqi %>% relocate(`TIB2`, .after = last_col())
+
+
+
+
+
+# write.csv(dat.psqi, "PSQI_rawData_April2020_v1.csv", row.names = FALSE)
+
+# currentDate <- format(Sys.time(), "%F_%H-%M")
+# write_csv(dat.psqi,
+# 		  paste("PSQI_rawData_",currentDate,".csv",sep=""),
+# 		  na = "NA",
+# 		  col_names = TRUE, quote_escape = "double")
+
+
+# colnames(dat.psqi)
+
+```
+
+
+```{r COMP-1, eval=TRUE, echo=FALSE}
+#		COMPONENT 1 = QUESTION 9
+dat.psqi$psqi_comp1raw <- as.numeric(dat.psqi$psqi_component1)
+dat.psqi$psqi_Comp1 <- as.numeric(dat.psqi$psqi_component1)
+
+#		SCORE QUESTION 1
+# Component 1: Subjective sleep quality—question 9
+# Response, Component Score to Q9 
+# Very good, 0
+# Fairly good, 1
+# Fairly bad, 2
+# Very bad, 3
+
+dat.psqi <- dat.psqi %>% relocate(psqi_comp1raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp1, .after = last_col())
+# colnames(dat.psqi)
+```
+
+
+```{r COMP-2, eval=TRUE, echo=FALSE}
+# Component 2: Sleep latency—questions 2 and 5a
+
+dat.psqi$Q2 <- as.numeric(dat.psqi$psqi_2)
+dat.psqi$Q5a <- as.numeric(dat.psqi$psqi_5a)
+
+#		SCALE Q2
+dat.psqi  <- dat.psqi %>%
+	mutate(
+		Q2score1 = case_when(
+			Q2 <= 15 ~ 0,
+			Q2 >= 16 & Q2 <= 30 ~ 1,
+			Q2 >= 31 & Q2 <= 60 ~ 2,
+			Q2 > 60 ~ 3,
+			TRUE ~ as.numeric(Q2)
+		)
+	)
+#		SCALE Q5
+dat.psqi <- dat.psqi %>% 
+	mutate(
+		Q5aScore1 = case_when(
+			Q5a == 1 ~ 0,
+			Q5a == 2 ~ 1,
+			Q5a == 3 ~ 2,
+			Q5a == 4 ~ 3,
+			TRUE ~ as.numeric(Q5a)
+		)
+	)
+
+#		CALC COMP-2 RAW AND SCALED SCORES
+dat.psqi  <- dat.psqi %>%
+	rowwise() %>%
+	mutate(
+		psqi_comp2raw = sum(c(Q2, Q5a), na.rm = TRUE),
+		Q2and5 = sum(c(Q2score1, Q5aScore1), na.rm = TRUE)
+	) %>%
+	ungroup()
+
+
+	#		RESCALE THE COMP 2 SCALED SCORES
+dat.psqi <- dat.psqi %>% 
+	mutate(
+		psqi_Comp2 = case_when(
+			Q2and5 == 0 ~ 0,
+			Q2and5 >= 1 & Q2and5 <= 2 ~ 1,
+			Q2and5 >= 3 & Q2and5 <= 4 ~ 2,
+			Q2and5 >= 5 & Q2and5 <= 6 ~ 3,
+			TRUE ~ as.numeric(Q2and5)
+		)
+	)
+dat.psqi <- dat.psqi %>% relocate(psqi_comp1raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp2raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp1, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp2, .after = last_col())
+# colnames(dat.psqi)
+```
+
+
+```{r COMP-3, eval=TRUE, echo=FALSE}
+# Component 3: Sleep duration—question 4
+
+dat.psqi$Q4 <- as.numeric(dat.psqi$psqi_4)
+dat.psqi$psqi_comp3raw <- as.numeric(dat.psqi$psqi_4)
+
+#		COMP 3 SCALED SCORE
+dat.psqi  <- dat.psqi %>%
+	mutate(
+		psqi_Comp3 = case_when(
+			Q4 > 7 ~ 0,
+			Q4 >= 6 & Q4 <= 7 ~ 1,
+			Q4 >= 5 & Q4 < 6 ~ 2,
+			Q4 < 5 ~ 3,
+			TRUE ~ as.numeric(Q4)
+		)
+	)
+
+dat.psqi <- dat.psqi %>% relocate(Q4, .before = psqi_Comp1)
+# colnames(dat.psqi)
+```
+
+
+```{r COMP-4, eval=TRUE, echo=FALSE}
+# Component 4: Sleep efficiency—questions 1, 3, and 4
+# Sleep efficiency = (# hours slept/# hours in bed) X 100% 
+#	= (Q4 / TIB) * 100
+# hours slept—question 4
+# hours in bed—calculated from responses to questions 1 and 3
+# 	Sleep efficiency, Component score 
+# 		> 85%, 0	
+# 		75-84%, 1
+# 		65-74%, 2
+# 		< 65%, 3
+
+dat.psqi$psqi_comp4raw <- (dat.psqi$Q4 / dat.psqi$TIB) * 100
+dat.psqi$SE <- (dat.psqi$Q4 / dat.psqi$TIB) * 100
+
+dat.psqi  <- dat.psqi %>%
+	mutate(
+		psqi_Comp4 = case_when(
+			SE >= 85 ~ 0,
+			SE >= 75 & SE < 85 ~ 1,
+			SE >= 65 & SE < 75 ~ 2,
+			SE < 65 ~ 3,
+			TRUE ~ as.numeric(SE)
+		)
+	)
+
+dat.psqi <- dat.psqi %>% relocate(SE, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_comp1raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp2raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp3raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp4raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp1, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp2, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp3, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp4, .after = last_col())
+# colnames(dat.psqi)
+```
+
+
+```{r COMP-5, eval=TRUE, echo=FALSE}
+# Sum of 5b to 5j scores, Component 5 score
+# 0, 0
+# 1-9, 1
+# 10-18, 2 
+# 19-27, 3
+
+
+###		NEED TO DO THIS TWICE FOR SOME REASON	####
+dat.psqi$psqi_2 <- as.numeric(dat.psqi$psqi_2)
+dat.psqi$psqi_4 <- as.numeric(dat.psqi$psqi_4)
+dat.psqi$psqi_5a <- as.numeric(dat.psqi$psqi_5a)
+dat.psqi$psqi_5b <- as.numeric(dat.psqi$psqi_5b)
+dat.psqi$psqi_5c <- as.numeric(dat.psqi$psqi_5c)
+dat.psqi$psqi_5d <- as.numeric(dat.psqi$psqi_5d)
+dat.psqi$psqi_5e <- as.numeric(dat.psqi$psqi_5e)
+dat.psqi$psqi_5f <- as.numeric(dat.psqi$psqi_5f)
+dat.psqi$psqi_5g <- as.numeric(dat.psqi$psqi_5g)
+dat.psqi$psqi_5h <- as.numeric(dat.psqi$psqi_5h)
+dat.psqi$psqi_5i <- as.numeric(dat.psqi$psqi_5i)
+dat.psqi$psqi_5othera <- as.numeric(dat.psqi$psqi_5othera)
+dat.psqi$psqi_7 <- as.numeric(dat.psqi$psqi_7)
+dat.psqi$psqi_8a <- as.numeric(dat.psqi$psqi_8a)
+dat.psqi$psqi_9 <- as.numeric(dat.psqi$psqi_9)
+dat.psqi$psqi_component1 <- as.numeric(dat.psqi$psqi_component1)
+
+dat.psqi$psqi_5j <- dat.psqi$psqi_5othera # copy variable
+
+#		REARRANGE COLUMNS - AGAIN
+dat.psqi <- dat.psqi %>% relocate(psqi_5othera, .before = psqi_5b)
+dat.psqi <- dat.psqi %>% relocate(psqi_5b, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5c, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5d, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5e, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5f, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5g, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5h, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5i, .before = psqi_Comp1)
+dat.psqi <- dat.psqi %>% relocate(psqi_5j, .before = psqi_Comp1)
+
+
+#		RESCORE THE RESPONSES - ORIG = 1-4; NEW = 0-3
+#		THIS REPLACES THE VALUES IN THE ORIGINAL VARIABLES
+# dat.psqi <- dat.psqi %>% 
+# 	mutate_at(vars(matches("psqi_5[b-i]$")), ~ . - 1)
+
+#		RESCORING THE LONG WAY
+dat.psqi$Q5b <- dat.psqi$psqi_5b -1
+dat.psqi$Q5c <- dat.psqi$psqi_5c -1
+dat.psqi$Q5d <- dat.psqi$psqi_5d -1
+dat.psqi$Q5e <- dat.psqi$psqi_5e -1
+dat.psqi$Q5f <- dat.psqi$psqi_5f -1
+dat.psqi$Q5g <- dat.psqi$psqi_5g -1
+dat.psqi$Q5h <- dat.psqi$psqi_5h -1
+dat.psqi$Q5i <- dat.psqi$psqi_5i -1
+dat.psqi$Q5j <- dat.psqi$psqi_5j 
+
+#		SUMMING THE SCORES
+dat.psqi  <- dat.psqi %>%
+	rowwise() %>%
+	mutate(
+		psqi_comp5raw = sum(c(Q5b, Q5c, Q5d, Q5e, Q5f, 
+							  Q5g, Q5h, Q5i, Q5j), na.rm = TRUE),
+		Q5s = sum(c(Q5b, Q5c, Q5d, Q5e, Q5f, Q5g, Q5h, Q5i, Q5j), na.rm = TRUE)
+	) %>%
+	ungroup()
+
+
+# Sum of 5b to 5j scores, Component 5 score
+# 0, 0
+# 1-9, 1
+# 10-18, 2 
+# 19-27, 3
+#		CONVERTING TO COMPONENT SCORE
+dat.psqi <- dat.psqi %>% 
+	mutate(
+		psqi_Comp5 = case_when(
+			Q5s < 1 ~ 0,
+			Q5s >= 1 & Q5s <=9 ~ 1,
+			Q5s >= 10 & Q5s <=18 ~ 1,
+			Q5s >= 19 & Q5s <=27 ~ 1,
+			TRUE ~ as.numeric(Q5s)
+		)
+	)
+
+
+#		ORGANIZING COLUMNS
+dat.psqi <- dat.psqi %>% relocate(psqi_comp1raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp2raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp3raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp4raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp5raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp1, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp2, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp3, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp4, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp5, .after = last_col())
+
+
+# colnames(dat.psqi)
+
+```
+
+
+```{r COMP-6, eval=TRUE, echo=FALSE}
+# Component 6: Use of sleep medication—question 6
+# Response to Q6, Component 6 score
+# Not during past month, 0
+# Less than once a week, 1 
+# Once or twice a week, 2
+# Three or more times a week, 3
+
+dat.psqi$psqi_comp6raw <- as.numeric(dat.psqi$psqi_6)
+dat.psqi$psqi_Comp6 <- as.numeric(dat.psqi$psqi_6)
+# colnames(dat.psqi)
+
+```
+
+
+```{r COMP-7, eval=TRUE, echo=FALSE}
+# 	Component 7: SUM Daytime dysfunction—questions 7 and 8
+# Sum of Q7 and Q8 subscores, COMPONENT SCORE 
+# 0,0
+# 1-2 1 
+# 3-4 2 
+# 5-6 3
+
+#		SUM QUESTIONS 7 AND 8a
+dat.psqi  <- dat.psqi %>%
+	rowwise() %>%
+	mutate(
+		psqi_comp7raw = sum(c(psqi_7, psqi_8a), na.rm = TRUE),
+		Q7and8a = sum(c(psqi_7, psqi_8a), na.rm = TRUE)
+	) %>%
+	ungroup()
+
+#		SCORE COMPONENT 7
+dat.psqi  <- dat.psqi %>%
+	mutate(
+		psqi_Comp7 = case_when(
+			Q7and8a > 1 ~ 0,
+			Q7and8a >= 1 & Q7and8a <= 2 ~ 1,
+			Q7and8a >= 3 & Q7and8a <= 4 ~ 2,
+			Q7and8a >= 5 & Q7and8a <= 6 ~ 3,
+			TRUE ~ as.numeric(Q7and8a)
+		)
+	)
+
+
+#		ORGANIZING COLUMNS
+dat.psqi <- dat.psqi %>% relocate(psqi_comp1raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp2raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp3raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp4raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp5raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp6raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_comp7raw, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp1, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp2, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp3, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp4, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp5, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp6, .after = last_col())
+dat.psqi <- dat.psqi %>% relocate(psqi_Comp7, .after = last_col())
+
+```
+
+
+```{r GLOBAL-Score, eval=TRUE, echo=FALSE}
+# Global PSQI Score: Sum of seven component scores:
+
+dat.psqi  <- dat.psqi %>%
+	rowwise() %>%
+	mutate(
+		psqi_Globalraw = sum(c(psqi_comp1raw, psqi_comp2raw, psqi_comp3raw,
+							psqi_comp4raw, psqi_comp5raw, psqi_comp6raw,
+							psqi_comp7raw), na.rm = TRUE),
+		psqi_Global = sum(c(psqi_Comp1, psqi_Comp2, psqi_Comp3,
+							psqi_Comp4, psqi_Comp5, psqi_Comp6,
+							psqi_Comp7), na.rm = TRUE)
+	) %>%
+	ungroup()
+
+
+# colnames(dat.psqi)
+
+```
+
+
+```{r RENAME COMPS, eval=TRUE, echo=FALSE}
+#		RENAME THE PSQI COMPONENTS
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp1raw'] <- 'slpQualraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp2raw'] <- 'slpLatraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp3raw'] <- 'slpDurraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp4raw'] <- 'slpEffraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp5raw'] <- 'slpDistraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp6raw'] <- 'slpMedsraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_comp7raw'] <- 'slpDayFcnraw'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp1'] <- 'slpQual'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp2'] <- 'slpLat'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp3'] <- 'slpDur'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp4'] <- 'slpEff'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp5'] <- 'slpDist'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp6'] <- 'slpMeds'
+names(dat.psqi)[names(dat.psqi) == 'psqi_Comp7'] <- 'slpDayFcn'
+
+# colnames(dat.psqi)
+
+# currentDate <- format(Sys.time(), "%F_%H-%M")
+# write_csv(dat.psqi,
+# 		  paste("PSQI_scored_",currentDate,".csv",sep=""),
+# 		  na = "NA",
+# 		  col_names = TRUE, quote_escape = "double")
+
+```
+
+
+```{r REINTEGRATE, eval=TRUE, echo=FALSE}
+#		COMBINING 2 DATASETS
+#		MERGE PSQI DATA BACK INTO MAIN DATASET
+
+#		CREATING SMALL PSQI DATASET
+psqiSM  <- dat.psqi %>% dplyr::select("ID","TIB",
+									  "slpQual", "slpLat", 
+									  "slpDur", "slpEff", 
+									  "slpDist", "slpMeds",
+									  "slpDayFcn", "psqi_Global",
+									  "slpQualraw", "slpLatraw", 
+									  "slpDurraw", "slpEffraw", 
+									  "slpDistraw", "slpMedsraw",
+									  "slpDayFcnraw", "psqi_Globalraw")
+#		MERGE BACK INTO MAIN DATASET
+dat1 <- merge(dat1, psqiSM, by = "ID")
+
+# colnames(dat1)
+
+```
+
+* The PSQI data has been updated, processed, clean and scored  
+
+* **NOTE:** I need to add a section that discusses the PSQI cutoff.
+Anything over "5" is considered significant.
+
+## INITIAL DATA SETS
+Create a small dataset (dat.sm) that includes only the variables of interest.
+```{r Primary-datasets, eval=TRUE, echo=FALSE, comment=""}
+#		CREATING SMALL DATASETS
+
+# datSM1  <- dat1 %>% dplyr::select("ID","group.factor","ess_total", "bdi_total", "mcgill_total")
+dat.sm  <- dat1 %>% dplyr::select("group.factor",
+								  "slpQual", "slpLat", 
+								  "slpDur", "slpEff", 
+								  "slpDist", "slpMeds",
+								  "slpDayFcn", "psqi_Global",
+								  "slpQualraw", "slpLatraw", 
+								  "slpDurraw", "slpEffraw", 
+								  "slpDistraw", "slpMedsraw",
+								  "slpDayFcnraw", "psqi_Globalraw",
+								  "ess_total", "isi_total",
+								  "bdi_total", "mcgill_total", 
+								  "TIB")
+
+# dat.bar1.orig <- dat1 %>% dplyr::select("ID","group.factor",
+# 								  "slpQual", "slpLat", 
+# 								  "slpDur", "slpEff", 
+# 								  "slpDist", "slpMeds",
+# 								  "slpDayFcn", "psqi_Global",
+# 								  "ess_total", "isi_total",
+# 								  "bdi_total", "mcgill_total", 
+# 								  "TIB")
+
+dat.bar2.orig <- dat1 %>% dplyr::select("ID","group.factor",
+										"slpQualraw", "slpLatraw", 
+										"slpDurraw", "slpEffraw", 
+										"slpDistraw", "slpMedsraw",
+										"slpDayFcnraw", "psqi_Globalraw",
+										"ess_total", "isi_total",
+										"bdi_total", "mcgill_total", 
+										"TIB")
+
+dat.HC <- dat.sm %>%
+	filter(group.factor == "HC")
+dat.FM <- dat.sm %>%
+	filter(group.factor == "FM")
+dat.CLBP <- dat.sm %>%
+	filter(group.factor == "CLBP")
+dat.pain <- dat.sm %>%
+	filter(group.factor == "CLBP" | group.factor == "FM")
+
+
+
+# smallData <- paste("dat.sm2_",currentDate,".csv",sep="") 
+# write_csv(dat.sm, smallData,
+# 		  na = "NA", append = FALSE,
+# 		  col_names = TRUE, quote_escape = "double")
+
+
+#		TO RECREATE A DATASET
+# dput(head(dat.time, 20))
+# dput(datSM1)
+#		NOT ALL SUBJECTS HAVE COMPLETE DATA
+#		DONE AS OF March 31, 2020
+```
+
+
+## VARIANCE CHECK
+Which variable(s) in the dat.sm data has potential issues with variances?
+
+```{r QA-DATA, eval=TRUE, echo=TRUE, comment=""}
+# dat.sm.smry <- by(dat.sm, dat.sm$group.factor, summary, na.rm = TRUE)
+# 
+# summarise(dat.sm)
+
+#		LOOKING AT VARIANCE AMONG VARIABLES
+
+nearZeroVar(dat.sm,
+			uniqueCut = 2,
+			names = TRUE)
+
+```
+
+
+```{r Exploring-data, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+#-EXAMINE DATA
+##-Reports - skipped for now
+####				EXPLORING DATA WITH THE DATAEXPLORER PACKAGE
+# library(DataExplorer)
+# create_report(dat.isi)
+
+```
+
+
+# SAMPLE DESCRIPTIVES
+## Group by sex for overall sample.
+```{r Demographics, eval=FALSE, echo=TRUE}
+#		GROUP BY SEX INFORMATION
+group_by_sex <- dat1 %>%
+	group_by(group.factor, sex.factor) %>%
+	tally()
+
+names(group_by_sex)[names(group_by_sex) == 'group.factor'] <- 'Group'
+names(group_by_sex)[names(group_by_sex) == 'sex.factor'] <- 'Sex'
+
+gpsex1 <- spread(group_by_sex, Sex, n) %>% 
+	adorn_totals(c("row", "col"))
+
+gpsex1 %>% 
+	kable(align = "c", padding = 4, caption = "Entire Sample") %>% 
+	kable_styling(c("striped", "bordered"), full_width = F) %>% 
+	add_header_above(c(" ", "Sex" = 2, "")) %>%
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	row_spec(4, bold = T, background = "lightgrey") %>% 
+	column_spec(4, bold = T, background = "lightgray")
+
+#		END		#
+
+```
+
+
+## Group by age for overall sample.
+```{r Gp_by_age, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+newdf <- df %>% filter(party %in% c('R','D')) %>%
+  group_by(termstart,party) %>% summarise(MeanAge=mean(age,na.rm=T)) %>%
+  pivot_wider(names_from = party,values_from=MeanAge)
+
+newdf <- dat1 %>% filter(group.factor %in% c('HC','CLBP', 'FM')) %>%
+	group_by(group.factor) %>%
+	summarise(MeanAge=mean(age_visit_1,na.rm=T), 
+			  ageSD=sd(age_visit_1, na.rm = T)) 
+
+
+#%>%
+	pivot_longer(newdf,
+				 group.factor,
+				 names_from = group.factor,values_from=MeanAge)
+#	pivot_wider(names_from = group.factor,values_from=MeanAge)
+	
+```
+
+
+## t-test Age 2 groups
+```{r ttest_Age, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+##		FINAL SUBJECT COUNT		##
+dat1 %>% count(group.factor)
+
+age.dat   <- filter(dat1, group.factor != "FM")
+
+##		FINAL SUBJECT COUNT		##
+age.dat %>% count(group.factor)
+
+attach(age.dat)
+boxplot(age.dat$age_visit_1 ~ age.dat$group)
+
+# Ho: mean age of HC = CLBP
+# two-sided test
+# assume non-equal variances
+
+ageGroup.dat <- t.test(age.dat$age_visit_1 ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+# ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+	
+```
+
+
+## MEAN AGE STUFF
+```{r AgeMeans-SDs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+means.age <- dat1 %>% dplyr::select("group.factor", "age_visit_1") 
+
+means.age  <- filter(means.age, group.factor != TRUE)
+
+meansAge.stats <- describeBy(means.age,
+							group = "group.factor",
+							interp = FALSE,
+							skew = FALSE,
+							ranges = FALSE,
+							fast = NULL)
+
+meansAge.stats 
+
+# means.stats <- filter(means.stats,  group1 !="TRUE")
+
+# means.stats99
+# 
+# means.stats99 %>% kable(align = "c", caption = "test") %>% 
+# kable_styling(c("striped", "bordered"), full_width = F) %>% 
+# 	# add_header_above(c(" ", "Sex" = 2, "")) %>%
+# 	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+# 	row_spec(4, bold = T, background = "lightgrey")# %>% 
+# 	# column_spec(4, bold = T, background = "lightgray")
+
+	
+	
+```
+
+
+
+Means and SDs for each group.
+```{r Means-SDs, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
+means.data <- dat1 %>% dplyr::select("group.factor",
+                       "slpQual", "slpLat", 
+                       "slpDur", "slpEff", 
+                       "slpDayFcn", "psqi_Global",
+                       "ess_total", "bdi_total", 
+                       "mcgill_total") 
+
+means.data   <- filter(means.data, group.factor != TRUE)
+
+means.stats <- describeBy(means.data,
+							group = "group.factor",
+							interp = FALSE,
+							skew = FALSE,
+							ranges = FALSE,
+							fast = NULL)
+
+means.stats 
+
+# means.stats <- filter(means.stats,  group1 !="TRUE")
+
+# means.stats99
+# 
+# means.stats99 %>% kable(align = "c", caption = "test") %>% 
+# kable_styling(c("striped", "bordered"), full_width = F) %>% 
+# 	# add_header_above(c(" ", "Sex" = 2, "")) %>%
+# 	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+# 	row_spec(4, bold = T, background = "lightgrey")# %>% 
+# 	# column_spec(4, bold = T, background = "lightgray")
+
+	
+	
+```
+
+
+#PLOTS
+
+## CORR PLOTS
+
+```{r HC-Group, eval=TRUE, echo=FALSE, message=FALSE}
+######		HC GROUP			####
+dat.HC2 <- dat.HC %>% select(!"group.factor", -isi_total)
+dat.HC2 <- dat.HC2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.HC2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "HC group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r CLBP-Group, eval=TRUE, echo=FALSE, message=FALSE}
+######		CLBP GROUP			####
+dat.CLBP2 <- dat.CLBP %>% select(!"group.factor", -isi_total)
+dat.CLBP2 <- dat.CLBP2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.CLBP2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "CLBP group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r FM-Group, eval=TRUE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.FM2 <- dat.FM %>% select(!"group.factor", -isi_total)
+dat.FM2 <- dat.FM2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.FM2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "FM group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r Pain-Groups, eval=TRUE, echo=FALSE, message=FALSE}
+######		PAIN GROUPS			####
+dat.pain2 <- dat.pain %>% select(!"group.factor", -isi_total)
+dat.pain2 <- dat.pain2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.pain2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "Both pain groups",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r CLBP-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.CLBP2 <- dat.CLBP %>% select(!"group.factor", -TIB)
+dat.CLBP2 <- dat.CLBP2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+corr.data(dat.CLBP2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 1.5, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=1.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "CLBP pain group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+```{r HC-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.HC2 <- dat.HC %>% select(!"group.factor", -TIB)
+dat.HC2 <- dat.HC2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+corr.data(dat.HC2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 1.5, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=1.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "Healthy control group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+The end of corr plots
+
+## BAR PLOTS
+```{r BARS-1, eval=TRUE, echo=FALSE, message=FALSE}
+dat.bar1.orig  <- dat1 %>% dplyr::select("ID","group.factor",
+										 "slpQual", "slpLat", 
+										 "slpDur", "slpEff", 
+										 "slpDayFcn", "psqi_Global",
+										 "ess_total", "bdi_total", 
+										 "mcgill_total")
+
+dat.bar1.orig$ID <- factor(dat.bar1.orig$ID) # ID must be a factor
+names(dat.bar1.orig)[names(dat.bar1.orig)=="group.factor"] <- "group"
+
+
+####			BAR CHART DATA NEED TO BE IN LONG FORMAT		####
+
+#		Plot all the data at once
+dat.bar0 <- dat.bar1.orig
+
+#	select data for 1st bar chart = BDI, ESS, McGill
+dat.bar1a <- select(dat.bar1.orig, ID, group, 
+					slpDayFcn, slpEff, slpDur,
+					slpQual, slpLat)
+
+#	select data for 2nd bar chart
+dat.bar1b <- select(dat.bar1.orig, ID, group, 
+				   ess_total, psqi_Global, bdi_total)
+
+#	select data for 3rd bar chart
+dat.bar1c <- select(dat.bar1.orig, ID, group, 
+					mcgill_total)
+
+#	select data for 3rd bar chart
+dat.bar1d <- select(dat.bar1.orig, ID, group, 
+					mcgill_total, psqi_Global)
+
+
+
+
+# str(dat.bar)
+
+#		Convert to long format
+bar0.melt <- melt(dat.bar0, id.vars = c("ID", "group")) 
+bar1a.melt <- melt(dat.bar1a, id.vars = c("ID", "group")) 
+bar1b.melt <- melt(dat.bar1b, id.vars = c("ID", "group"))
+bar1c.melt <- melt(dat.bar1c, id.vars = c("ID", "group"))
+bar1d.melt <- melt(dat.bar1d, id.vars = c("ID", "group"))
+
+# head(bar1a.melt)
+
+#		Rename "value"
+names(bar0.melt)[names(bar0.melt)=="value"] <- "score"
+names(bar1a.melt)[names(bar1a.melt)=="value"] <- "score"
+names(bar1b.melt)[names(bar1b.melt)=="value"] <- "score"
+names(bar1c.melt)[names(bar1c.melt)=="value"] <- "score"
+names(bar1d.melt)[names(bar1d.melt)=="value"] <- "score"
+
+
+#		Calculate means and sem
+bar0.means <- ddply(bar0.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sd = sd(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1a.means <- ddply(bar1a.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+
+bar1b.means <- ddply(bar1b.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1c.means <- ddply(bar1c.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1d.means <- ddply(bar1d.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+
+#		PLOT THE LONG DATA
+ggplot(bar0.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,40)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	# scale_x_discrete(limits = vlevels1a) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons of all vars") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) 
+
+
+ggplot(bar1a.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,2.5)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons of psqi vars") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) 
+
+
+ggplot(bar1b.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	# coord_cartesian(ylim = c(0,3)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons")
+
+ggplot(bar1c.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,40)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "McGill pain questionnaire")
+
+# ggplot(bar1d.means, aes(x = variable, y = mean, fill = group )) +
+# 	geom_bar(position = position_dodge(.9), colour = "black", 
+# 			 stat = "identity") +
+# 	geom_errorbar(position = position_dodge(.9), width = .25,
+# 				  aes(ymin = mean - sem, ymax = mean + sem)) +
+# 	# coord_cartesian(ylim = c(0,40)) +
+# 	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+# 	scale_y_continuous(breaks = waiver()) +
+# 	geom_hline(yintercept = 0)
+
+
+```
+
+
+```{r BARPLOT-test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+#		VISUALIZE THE GROUP DIFFERENCES	WITH SIG LEVELS		#
+# Bar plot of mean +/-se
+ggbarplot(ToothGrowth, x = "dose", y = "len", add = "mean_se")+
+  stat_compare_means() +                                         # Global p-value
+  stat_compare_means(ref.group = "0.5", label = "p.signif",
+                     label.y = c(22, 29))                   # compare to ref.group
+
+# Line plot of mean +/-se
+ggline(ToothGrowth, x = "dose", y = "len", add = "mean_se")+
+  stat_compare_means() +                                         # Global p-value
+  stat_compare_means(ref.group = "0.5", label = "p.signif",
+                     label.y = c(22, 29))     
+
+# _________________________________________#
+#		EXAMPLE		#
+
+zdat <- data.frame(Group = c("S1", "S1", "S2", "S2"),
+              Sub   = c("A", "B", "A", "B"),
+              Value = c(3,5,7,8))  
+
+ggplot(zdat, aes(Group, Value)) +
+	geom_bar(aes(fill = Sub), stat="identity", 
+			 position="dodge", width=.5) +
+	geom_signif(stat="identity",
+				data=data.frame(x=c(0.875, 1.875),
+								xend=c(1.125, 2.125),
+								y=c(5.8, 8.5), 
+								annotation=c("**", "NS")),
+				aes(x=x,xend=xend, y=y, yend=y,
+					annotation=annotation)) #+
+	geom_signif(comparisons=list(c("S1", "S2")),
+				annotations="***",
+				y_position = 9.3, 
+				tip_length = 0, vjust=0.4) 
+# +
+	# scale_fill_manual(values = c("grey80", "grey20"))
+
+#___________________________________________#
+library(ggplot2)
+library(ggpval)
+data("PlantGrowth")
+plt <- ggplot(PlantGrowth, aes(group, weight)) +
+  geom_boxplot()
+add_pval(plt, pairs = list(c(1, 3)), test='wilcox.test')
+#_________________________________________
+
+ggplot(bar1a.means, aes(variable, mean)) +
+	geom_bar(aes(fill = group),
+			 stat = "identity",
+			 position = "dodge", 
+			 width = .5) +
+	geom_signif(stat = "identity",
+				data=data.frame(x=c(0.875, 1.875),
+								xend=c(1.125, 2.125),
+								y=c(2.5, 3.5), 
+								annotation=c("***", "bob")),
+				aes(x=x,xend=xend, y=y, yend=y,
+					annotation=annotation))
+
+```
+
+
+
+## BOX PLOTS
+```{r Box-plots, eval=FALSE, echo=FALSE, message=FALSE}
+####		PSQI BOXPLOT		####
+head(dat.bar1a)
+head(bar1a.means)
+ggplot(bar1a.means, aes(x = group, y = mean )) +
+	geom_boxplot() +
+	geom_signif(comparisons = list(c("HC", "CLBP"),
+								   c("HC", "FM"),
+								   c("CLBP", "FM")),
+				 # y_position = c(30, 40, 25),
+				map_signif_level=function(p)sprintf("p = %.2g", p))
+
+
+
+```
+
+
+```{r BOXPLOT-test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+# PERFORMING TEST
+compare_means(mcgill_total ~ group.factor, data = dat1,
+			  ref.group = ".all.", method = "t.test")
+
+
+#		VISUALIZE THE GROUP DIFFERENCES			#
+# 		Pairwise comparison of all agains the grand mean (I think)
+ggboxplot(dat1, x = "group.factor",
+		  y = "mcgill_total",
+		  color = "group.factor",
+		  add = "jitter",
+		  legend = "none") +
+	rotate_x_text(angle = 45) +
+	geom_hline(yintercept = mean(dat1$mcgill_total),
+			   linetype = 2) + # add horizontal line at base mean
+	stat_compare_means(method = "anova", label.y = 80) +
+	stat_compare_means(label = "p.signif",
+					   method = "t.test",
+					   ref.group = ".all.")  
+
+#		VISUALIZE GROUP DIFS WITH SIG LEVELS IN PLOT
+gp_comparisons = list(c("HC", "CLBP"),
+					  c("CLBP", "FM"),
+					  c("HC", "FM"))
+
+ggboxplot(dat1,
+		  x = "group.factor",
+		  y = "mcgill_total",
+		  color =  "group.factor",
+		  palette = "jco") +
+	stat_compare_means(comparisons = gp_comparisons,
+					   label.y = c(45, 55, 65)) +
+	stat_compare_means(label.y = 80)
+
+
+##			END			##
+```
+
+
+# ANOVA (Main effect of group)
+```{r ANOVA-scaleddata, eval=TRUE, echo=TRUE, message=FALSE}
+# construct anova model for each column of dat1[, my_outcome_variables]
+model_summaries <- dat1[,c("age_visit_1","slpQual", "slpLat", "slpDur",
+						   "slpEff", "slpDist","slpMeds",
+						   "slpDayFcn", "psqi_Global","ess_total",
+						   "isi_total", "bdi_total", "mcgill_total",
+						   "TIB")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat1))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+GetModels <- function(l) l$model
+Models <- purrr::map(model_summaries, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+Models2 <- filter(Models,  term !="Residuals")
+Models2 <- Models2 %>% 
+	dplyr::select("Name" , "p.value")
+
+
+####			ANOVA TABLE MADE WITH KABLE			####
+Models2 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ANOVA full model") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+##		END		##
+```
+
+
+```{r ANOVA-rawdata, eval=FALSE, echo=TRUE, message=FALSE}
+#		USING PSQI RAW COMPONENT SCORES
+# construct anova model for each column of dat1[, my_outcome_variables]
+model_summary_raw <- dat1[,c("age_visit_1", "slpQualraw", "slpLatraw", "slpDurraw",
+						   "slpEffraw", "slpDistraw","slpMedsraw",
+						   "slpDayFcnraw", "psqi_Globalraw","ess_total",
+						   "isi_total", "bdi_total", "mcgill_total",
+						   "TIB")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat1))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+# GetModels <- function(l) l$model
+Models3 <- purrr::map(model_summary_raw, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+Models3 <- filter(Models3,  term !="Residuals")
+Models3 <- Models3 %>% 
+	dplyr::select("Name" , "p.value")
+
+
+####			ANOVA TABLE MADE WITH KABLE			####
+Models3 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ANOVA full model with raw scores") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+##		END		##
+```
+
+
+
+## POSTHOC 
+```{r PostHoc-Scaled, eval=TRUE, echo=TRUE, message=FALSE}
+GetTukeys <- function(m) m$tukey
+Tukeys  <- purrr::map(model_summaries, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Tukeys)
+# Tukeys
+
+names(Tukeys)[names(Tukeys) == 'Name'] <- 'Var'
+names(Tukeys)[names(Tukeys) == 'estimate'] <- 'diff'
+
+
+
+####			PostHoc TABLE USING KABLE			####
+select(Tukeys, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.054, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, 
+						"age_visit_1" = 3,
+						"Sleep Quality" = 3,
+						"Sleep Latency" = 3,
+						"Sleep Duration" = 3,
+						"Sleep Efficacy" = 3,
+						"Sleep Disturbance" = 3,
+						"Sleep Medications" = 3,
+						"Sleep Daytime Functioning" = 3,
+						"PSQI Global" = 3,
+						"ESS Total" = 3, 
+						"ISI Total" = 3,
+						"BDI Total" = 3,
+						"McGill Total" = 3,
+						"Time in Bed" = 3)) #%>% 
+# scroll_box(height = "500px")
+
+
+
+```
+
+
+```{r PostHoc-Raw, eval=FALSE, echo=TRUE, message=FALSE}
+# GetTukeys <- function(m) m$tukey
+Tukeys3  <- purrr::map(model_summary_raw, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Tukeys)
+# Tukeys
+
+names(Tukeys3)[names(Tukeys3) == 'Name'] <- 'Var'
+names(Tukeys3)[names(Tukeys3) == 'estimate'] <- 'diff'
+
+
+
+####			PostHoc TABLE USING KABLE			####
+select(Tukeys3, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.05, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc (PSQI raw) group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, 
+						"age_visit_1" = 3,
+						"Sleep Quality raw" = 3, 
+						"Sleep Latency raw" = 3,
+						"Sleep Duration raw" = 3,
+						"Sleep Efficacy raw" = 3,
+						"Sleep Disturbance raw" = 3,
+						"Sleep Medications raw" = 3,
+						"Sleep Daytime Functioning raw" = 3,
+						"PSQI Global raw" = 3,
+						"ESS Total" = 3, 
+						"ISI Total" = 3,
+						"BDI Total" = 3,
+						"McGill Total" = 3,
+						"Time in Bed" = 3)) #%>% 
+# scroll_box(height = "500px")
+
+
+
+```  
+
+***   
+
+***  
+
+**STOP HERE  **
+
+***  
+
+***  
+
+# ISI ANALYSES
+This set of analyses uses a subset of subjects who have completed the ISI
+
+
+Also create a dataset of subjects with ISI data (dat.isi).
+```{r ISIsubgroup, eval=FALSE, echo=FALSE, message=FALSE, comment=""}
+#		Subgroup with ISI data
+# 		Getting selected variables
+dat.isi <- dat1 %>% dplyr::select("group.factor",
+										"slpQual", "slpLat", 
+										"slpDur", "slpEff", 
+										"slpDist", "slpMeds",
+										"slpDayFcn", "psqi_Global",
+										"ess_total", "isi_total",
+										"bdi_total", "mcgill_total", 
+										"TIB")
+
+dat.isi2 <- dat1 %>% dplyr::select("group.factor",
+										"slpQualraw", "slpLatraw", 
+										"slpDurraw", "slpEffraw", 
+										"slpDistraw", "slpMedsraw",
+										"slpDayFcnraw", "psqi_Globalraw",
+										"ess_total", "isi_total",
+										"bdi_total", "mcgill_total", 
+										"TIB")
+
+#		Removing subjects without ISI data
+dat.isi <- dat.isi %>% 
+	na.omit()
+# dim(dat.isi)
+
+# dat.isi2 <- dat.isi2 %>% 
+# 	na.omit()
+# dim(dat.isi2)
+
+# dat.isi %>% count(group.factor)
+# dat.isi2 %>% count(group.factor)
+
+```
+
+
+## ISI DATA VARIANCE
+The variable(s) in the ISI data with variance issues are:
+```{r QA-ISI-DATA, eval=FALSE, echo=FALSE, comment=""}
+nearZeroVar(dat.isi,
+			uniqueCut = 2,
+			names = TRUE)
+
+```
+
+
+```{r ISI-Drop-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+# dat.isi2 <- dat1 %>% dplyr::select("group.factor",
+# 										"slpQualraw", "slpLatraw", 
+# 										"slpDurraw", "slpEffraw", 
+# 										"slpDistraw", "slpMedsraw",
+# 										"slpDayFcnraw", "psqi_Globalraw",
+# 										"ess_total", "isi_total",
+# 										"bdi_total", "mcgill_total", 
+# 										"TIB")
+
+
+
+######		FM GROUP			####
+dat.isi2 <- dat.isi2 %>% select(!"group.factor", -TIB)
+# dat.isi2 <- dat.isi2 %>% select(!"group.factor")
+# dat.isi2 <- dat.isi2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+isiCorrPlot <- corr.data(dat.isi2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 3, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=2.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "ISI All groups",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+```{r ISI-ANOVA, eval=FALSE, echo=FALSE, message=FALSE}
+# construct anova model for each column of dat1[, my_outcome_variables]
+isi_model_summaries <- dat.isi[,c("slpQual", "slpLat", "slpDur",
+						   "slpEff", "slpDist","slpMeds",
+						   "slpDayFcn", "psqi_Global","ess_total",
+						   "isi_total", "bdi_total", "mcgill_total",
+						   "TIB")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat.isi))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+GetModels <- function(l) l$model
+isi_Models <- purrr::map(isi_model_summaries, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+isi_Models2 <- filter(isi_Models,  term !="Residuals")
+isi_Models2 <- isi_Models2 %>% 
+	dplyr::select("Name" , "p.value")
+
+
+####			ANOVA TABLE MADE WITH KABLE			####
+isi_Models2 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ISI subgroup ANOVA full model") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+##		END		##
+```
+
+
+```{r ISI-PostHoc, eval=FALSE, echo=FALSE, message=FALSE}
+GetTukeys <- function(m) m$tukey
+isi_Tukeys  <- purrr::map(isi_model_summaries, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Tukeys)
+# Tukeys
+
+names(isi_Tukeys)[names(isi_Tukeys) == 'Name'] <- 'Var'
+names(isi_Tukeys)[names(isi_Tukeys) == 'estimate'] <- 'diff'
+
+
+
+####			PostHoc TABLE USING KABLE			####
+select(isi_Tukeys, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.054, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, "Sleep Quality" = 3, #)) #, 
+						"Sleep Latency" = 3,
+						"Sleep Duration" = 3,
+						"Sleep Efficacy" = 3,
+						"Sleep Disturbance" = 3,
+						"Sleep Medications" = 3,
+						"Sleep Daytime Functioning" = 3,
+						"PSQI Global" = 3,
+						"ESS Total" = 3, 
+						"ISI Total" = 3,
+						"BDI Total" = 3,
+						"McGill Total" = 3,
+						"Time in Bed" = 3)) #%>% 
+# scroll_box(height = "500px")
+
+
+
+```
+
+
+
+# END - BEYOND HERE IS EXPLORATORY
