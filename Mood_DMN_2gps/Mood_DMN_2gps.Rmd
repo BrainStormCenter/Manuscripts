@@ -920,7 +920,7 @@ boxplot(age.dat$age_visit_1 ~ age.dat$group)
 
 ageGroup.dat <- t.test(age.dat$age_visit_1 ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
-ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+# ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
 
 	
