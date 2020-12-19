@@ -2,11 +2,13 @@
 title: "Mood and DMN 2gps"
 author: "Jason"
 created: "16/03/2020"
-modified: "12/11/2020"
+modified: "18/12/2020"
 output: 
   html_document: 
     toc: yes
     number_sections: yes
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ***
@@ -175,7 +177,7 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 
 ```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 #	LIST ALL THE VARIABLES IN THE DATA SET
-varNames <- colnames(dat0)
+# varNames <- colnames(dat0)
 ```
 
 ## Subset
@@ -185,6 +187,13 @@ dat0 <- merge(data, subs)
 dat0 <- as_tibble(dat0)
 ```
 
+## Var Names
+```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#	LIST ALL THE VARIABLES IN THE DATA SET
+varNames <- list(tibble(colnames(dat0)))
+
+zVar <- as_tibble(varNames)
+```
 
 
 
@@ -216,6 +225,8 @@ dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
 
 ##		FINAL SUBJECT COUNT		##
 dat1 %>% count(group.factor)
+
+vNames <- colnames(dat0) 
 
 ##						END						##
 ```
@@ -295,8 +306,8 @@ dat.psqi$psqi_5othera <- dat.psqi$psqi_5othera %>% replace_na(0)
 ####			PSQI TIB SANITY CHECK			####
 # max(dat1$TIB)
 
-colnames(dat1)
-da# z <- data[which(dat.psqi$TIB > 19, ) ]
+# colnames(dat1)
+# da# z <- data[which(dat.psqi$TIB > 19, ) ]
 ```
 
 
@@ -922,6 +933,7 @@ ageGroup.dat <- t.test(age.dat$age_visit_1 ~ age.dat$group, mu=0, alt="two.sided
 
 # ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
+ageGroup.dat
 
 	
 ```

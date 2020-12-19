@@ -173,11 +173,6 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 
 ```
 
-```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
-#	LIST ALL THE VARIABLES IN THE DATA SET
-varNames <- colnames(dat0)
-```
-
 ## Subset
 ```{r DataSubset, eval=TRUE, echo=TRUE, message=FALSE}
 #	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
