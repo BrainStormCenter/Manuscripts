@@ -8,7 +8,7 @@ output:
     toc: yes
     number_sections: yes
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ***
@@ -186,7 +186,7 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 # varNames <- colnames(dat0)
 ```
 
-## Subset
+## Subset to subs with imaging data
 ```{r DataSubset, eval=TRUE, echo=TRUE, message=FALSE}
 #	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
 dat0 <- merge(data, subs)
@@ -195,94 +195,21 @@ dat0 <- as_tibble(dat0)
 ```
 
 
-# CLEAN DATA
-```{r Clean-data, eval=TRUE, echo=TRUE, message=FALSE, tidy=TRUE, comment=""}
-#		CLEANING AND PRESERVING ORIGINAL DATA
-
-data %>% count(group)
-dat1  <- filter(dat0, group != 0, group != "NA", dat0$bdi1 != "NA")
-dat1 %>% count(group)
-
-###										CREATING FACTORS			####
-dat1$group.factor = factor(dat1$group,levels=c("1","2","3"))
-levels(dat1$group.factor)=c("HC","CLBP","FM", na.rm = TRUE)
-
-dat1$sex.factor = factor(dat1$sex, levels = c("1", "2"))
-levels(dat1$sex.factor) = c("Male", "Female", na.rm = FALSE)
-			
-dat1$v1mood.factor = factor(dat1$visit1condition, levels = c("1", "2"))  
-levels(dat1$v1mood.factor) = c("Pos1", "Neg1", na.rm = FALSE)
-
-dat1$v2mood.factor = factor(dat1$visit2condition, levels = c("1", "2")) 
-levels(dat1$v2mood.factor) = c("Pos2", "Neg2", na.rm = FALSE)
-
-#	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
-zdataFactors <- select_if(dat1, is.factor)
-colnames(zdataFactors)
-rm(zdataFactors)
-
-# levels(dataFactors$sex.fct)
-# levels(dataFactors$painduration)
-
-
-
-
-
-
-
-# names(dat1)[names(dat1) == 'gp.fct'] <- 'group.factor'
-#		REPLACE HC McGILL TOTAL "NA" WITH 0
-dat1$mcgill_total  <- coalesce(dat1$mcgill_total, 0L)
-
-##		CLEAN ESS BY REMOVING "NA"		##
-# dat1   <- filter(dat1, ess_total != "NA")
-
-##		CHANGE VARIABLE TYPE		##
-dat1$ess_total <- as.numeric(dat1$ess_total)
-dat1$bdi_total <- as.numeric(dat1$bdi_total)
-dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
-
-
-
-select(dat1, contains("mood"))
-select(dat1, contains("cond"))
-##						ISI					##
-#		The Insomnia Severity Index score "isi_total" is already computed
-
-
-##		REDUCE GROUPS TO JUST HC AND CLBP		##
-#dat1   <- filter(dat1, group.factor != "FM")
-
-##		FINAL SUBJECT COUNT		##
-dat1 %>% count(group.factor)
-
-
-
-
-
-
-vNames <- colnames(dat0) 
-
-##						END						##
-```
-
-
-
-## Var Names
-```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+## 				FIND Var Names				##
+<!-- ```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 #	LIST ALL THE VARIABLES IN THE DATA SET
 zvarNames <- tibble(colnames(dat0))
 
 zVar <- as_tibble(zvarNames)
 
 
-m2 <- cbind(1, 1:4)
-colnames(m2, do.NULL = FALSE)
-colnames(m2) <- c("x","Y")
-rownames(m2) <- rownames(m2, do.NULL = FALSE, prefix = "Obs.")
-m2
+# m2 <- cbind(1, 1:4)
+# colnames(m2, do.NULL = FALSE)
+# colnames(m2) <- c("x","Y")
+# rownames(m2) <- rownames(m2, do.NULL = FALSE, prefix = "Obs.")
+# m2
 
-```
+``` -->
 
 
 CHECK THAT THE DATA ARE THE CORRECT FORMAT/TYPE
@@ -298,7 +225,76 @@ rm(dataFactors)
 ```
 
 
+# CLEAN DATA
+```{r Clean-data, eval=TRUE, echo=TRUE, message=FALSE, comment="", tidy=TRUE}
+#		CLEANING AND PRESERVING ORIGINAL DATA
 
+data %>% count(group)
+
+##					Preserve data		##
+dat1  <- dat0
+dat1 %>% count(group)
+
+###					CREATING FACTORS			####
+dat1$group.factor = factor(dat1$group,levels=c("1","2","3"))
+levels(dat1$group.factor)=c("HC","CLBP","FM", na.rm = TRUE)
+dat1 %>% count(group.factor)
+
+dat1$sex.factor = factor(dat1$sex, levels = c("1", "2"))
+levels(dat1$sex.factor) = c("Male", "Female", na.rm = FALSE)
+			
+dat1$v1mood.factor = factor(dat1$visit1condition, levels = c("1", "2"))  
+levels(dat1$v1mood.factor) = c("Pos1", "Neg1", na.rm = FALSE)
+
+dat1$v2mood.factor = factor(dat1$visit2condition, levels = c("1", "2")) 
+levels(dat1$v2mood.factor) = c("Pos2", "Neg2", na.rm = FALSE)
+
+#			CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
+zdataFactors <- select_if(dat1, is.factor)
+colnames(zdataFactors)
+rm(zdataFactors)
+
+##			USED FOR FINDING ORIGINAL VARIABLES		##
+# select(dat1, contains("mood"))
+# select(dat1, contains("cond"))
+
+# levels(dataFactors$sex.fct)
+# levels(dataFactors$painduration)
+
+###				CLEANING SPECIFIC VARIABLES			###
+#				Clean BDI		##
+# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
+dat1 %>% count(group.factor)
+
+##				REPLACE HC McGILL TOTAL "NA" WITH 0		##
+dat1$mcgill_total  <- coalesce(dat1$mcgill_total, 0L)
+
+
+##		CHANGE VARIABLE TYPE		##
+dat1$ess_total <- as.numeric(dat1$ess_total)
+dat1$bdi_total <- as.numeric(dat1$bdi_total)
+dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
+
+##		REDUCE GROUPS TO JUST HC AND CLBP		##
+dat1   <- filter(dat1, group.factor != "FM")
+
+##		FINAL SUBJECT COUNT		##
+dat1 %>% count(group.factor)
+
+####				UNUSED COMMANDS				####
+##				CLEAN ESS BY REMOVING "NA"		##
+# dat1   <- filter(dat1, ess_total != "NA")
+
+##						ISI					##
+#		The Insomnia Severity Index score "isi_total" is already computed
+
+#		Renaming a variable
+# names(dat1)[names(dat1) == 'gp.fct'] <- 'group.factor'
+
+# vNames <- colnames(dat0) 
+
+##						END						##
+```
 
 
 
