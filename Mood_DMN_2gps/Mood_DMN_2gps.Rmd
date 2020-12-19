@@ -186,7 +186,7 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 # varNames <- colnames(dat0)
 ```
 
-## Subset to subs with imaging data
+## IMAGING DATA SUBS
 ```{r DataSubset, eval=TRUE, echo=TRUE, message=FALSE}
 #	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
 dat0 <- merge(data, subs)
@@ -195,8 +195,8 @@ dat0 <- as_tibble(dat0)
 ```
 
 
-## 				FIND Var Names				##
-<!-- ```{r var_Names, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+## 				FIND Var Names				
+<!-- ```{r var_Names, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
 #	LIST ALL THE VARIABLES IN THE DATA SET
 zvarNames <- tibble(colnames(dat0))
 
@@ -242,17 +242,21 @@ dat1 %>% count(group.factor)
 
 dat1$sex.factor = factor(dat1$sex, levels = c("1", "2"))
 levels(dat1$sex.factor) = c("Male", "Female", na.rm = FALSE)
+dat1$sex.factor
 			
 dat1$v1mood.factor = factor(dat1$visit1condition, levels = c("1", "2"))  
 levels(dat1$v1mood.factor) = c("Pos1", "Neg1", na.rm = FALSE)
+dat1$v1mood.factor
 
 dat1$v2mood.factor = factor(dat1$visit2condition, levels = c("1", "2")) 
 levels(dat1$v2mood.factor) = c("Pos2", "Neg2", na.rm = FALSE)
+dat1$v2mood.factor
 
 #			CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
 zdataFactors <- select_if(dat1, is.factor)
 colnames(zdataFactors)
 rm(zdataFactors)
+
 
 ##			USED FOR FINDING ORIGINAL VARIABLES		##
 # select(dat1, contains("mood"))
@@ -296,9 +300,7 @@ dat1 %>% count(group.factor)
 ##						END						##
 ```
 
-
-
-
+#		SCORE DATA
 ## PSQI
 * The global PSQI score is then calculated by totaling the seven component scores, providing an overall score ranging from 0 to 21, where lower scores denote a healthier sleep quality.   
 * A PSQI Global score ≥ 5 is the clinical cutoff score (i.e., sleep problems)
@@ -405,6 +407,8 @@ dat.psqi <- dat.psqi %>%
 #		CRUDE FIX FOR THE 24+ HOUR ISSUE
 dat.psqi$TIB  <- as.numeric(dat.psqi$`Time in bed`)   # TIB version 2
 
+dat.psqi <- dat.psqi %>% relocate(`TIB`, .after = last_col())
+
 # round(dat.psqi$TIB  <- if_else(dat.psqi$TIB < 24,
 # 							   dat.psqi$TIB,
 # 							   dat.psqi$TIB - 24), 2)
@@ -437,13 +441,9 @@ dat.psqi$TIB  <- as.numeric(dat.psqi$`Time in bed`)   # TIB version 2
 # dat.psqi$TIB <- dat.psqi$`Time Difference`
 # 
 # dat.psqi <- dat.psqi %>% relocate(`Time Difference`, .after = last_col())
-dat.psqi <- dat.psqi %>% relocate(`TIB`, .after = last_col())
+
 # dat.psqi <- dat.psqi %>% relocate(`Time in bed`, .after = last_col())
 # dat.psqi <- dat.psqi %>% relocate(`TIB2`, .after = last_col())
-
-
-
-
 
 # write.csv(dat.psqi, "PSQI_rawData_April2020_v1.csv", row.names = FALSE)
 
@@ -841,7 +841,9 @@ dat1 <- merge(dat1, psqiSM, by = "ID")
 * **NOTE:** I need to add a section that discusses the PSQI cutoff.
 Anything over "5" is considered significant.
 
-## INITIAL DATA SETS
+
+
+# SUBSET DATA
 Create a small dataset (dat.sm) that includes only the variables of interest.
 ```{r Primary-datasets, eval=TRUE, echo=FALSE, comment=""}
 #		CREATING SMALL DATASETS
@@ -901,6 +903,24 @@ dat.pain <- dat.sm %>%
 #		NOT ALL SUBJECTS HAVE COMPLETE DATA
 #		DONE AS OF March 31, 2020
 ```
+
+#				SUBSET MOOD
+```{r Mood_Subset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#	Need to compare mood pre positive by group
+#	Need to compare mood pre negative by group
+#	Need to compare mood post positive by group
+#	Need to compare mood post negative by group
+
+dat1.mood <- dat1
+
+dat1.mood  <- dat1.mood %>% dplyr::select("ID","group.factor",
+										  )
+
+
+levels(dat1$v1mood.factor)
+
+```
+
 
 
 ## VARIANCE CHECK
@@ -983,6 +1003,7 @@ newdf <- dat1 %>% filter(group.factor %in% c('HC','CLBP', 'FM')) %>%
 
 ##		FINAL SUBJECT COUNT		##
 dat1 %>% count(group.factor)
+dat2  <-  filter(dat1, group.factor != "FM")
 
 age.dat   <- filter(dat1, group.factor != "FM")
 
@@ -992,11 +1013,26 @@ age.dat %>% count(group.factor)
 attach(age.dat)
 boxplot(age.dat$age_visit_1 ~ age.dat$group)
 
+attach(dat2)
+boxplot(dat2$visit1moodpre ~ dat2$group)
+
 # Ho: mean age of HC = CLBP
 # two-sided test
 # assume non-equal variances
 
 ageGroup.dat <- t.test(age.dat$age_visit_1 ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+ageGroup.dat
+
+v1MoodPre.ttest <- t.test(age.dat$visit1moodpre ~ age.dat$group.factor, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+v1MoodPre.ttest
+
+
+t.test(age.dat$visit1moodpre ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+t.test(age.dat$visit1moodpost ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+t.test(age.dat$visit1moodpost ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
 
 # ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
