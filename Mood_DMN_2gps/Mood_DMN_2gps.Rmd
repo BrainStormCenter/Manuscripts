@@ -243,6 +243,7 @@ dat1 %>% count(group.factor)
 dat1$sex.factor = factor(dat1$sex, levels = c("1", "2"))
 levels(dat1$sex.factor) = c("Male", "Female", na.rm = FALSE)
 dat1$sex.factor
+is.factor(dat1$sex.factor)
 			
 dat1$v1mood.factor = factor(dat1$visit1condition, levels = c("1", "2"))  
 levels(dat1$v1mood.factor) = c("Pos1", "Neg1", na.rm = FALSE)
@@ -255,6 +256,7 @@ dat1$v2mood.factor
 #			CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
 zdataFactors <- select_if(dat1, is.factor)
 colnames(zdataFactors)
+zdataFactors
 rm(zdataFactors)
 
 
