@@ -253,6 +253,15 @@ dat1$v2mood.factor = factor(dat1$visit2condition, levels = c("1", "2"))
 levels(dat1$v2mood.factor) = c("PosV2", "NegV2", na.rm = FALSE)
 dat1$v2mood.factor
 
+			
+dat1$v1.mood = factor(dat1$visit1condition, levels = c("1", "2"))  
+levels(dat1$v1.mood) = c("pos", "neg", na.rm = TRUE)
+dat1$v1.mood
+
+dat1$v2.mood = factor(dat1$visit2condition, levels = c("1", "2")) 
+levels(dat1$v2.mood) = c("pos", "neg", na.rm = FALSE)
+dat1$v2.mood
+
 #			CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
 zdataFactors <- select_if(dat1, is.factor)
 colnames(zdataFactors)
@@ -1553,8 +1562,82 @@ corr.data(dat.HC2) %>%
 
 ```
 
-
 The end of corr plots
+
+#		MOOD ANALYSES
+```{r Mood_Analyses, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#		Converting data to long format
+dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
+								"v1.mood", "v2.mood",
+								"visit1moodpre", "visit1moodpost",
+								# contains("mood")
+								"visit2moodpre", "visit2moodpost"
+								)
+
+dat2$ID <- factor(dat2$ID) # ID must be a factor
+
+dat2 %>% count(group.factor)
+
+# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
+dat2 <- filter(dat2, dat2$visit1moodpre != "NA")
+
+colnames(dat2)
+view(dat2)
+
+# zdataFactors2 <- select_if(dat2, is.factor)
+# colnames(zdataFactors2)
+# zdataFactors
+
+#		Convert to long format
+dat2.melt <- melt(dat2, id.vars = c("ID", "group.factor", "v1.mood", "v2.mood")) 
+colnames(dat2.melt)
+
+dat3.melt <- melt(dat2, id.vars = c("ID", "group.factor")) 
+colnames(dat3.melt)
+
+names(dat2.melt)[names(dat2.melt)=="variable"] <- "cond"
+names(dat2.melt)[names(dat2.melt)=="value"] <- "score"
+
+# 
+# describeBy(dat2.melt,
+# 		   group = "group.factor",
+# 		   interp = FALSE,
+# 		   skew = FALSE,
+# 		   ranges = FALSE,
+# 		   fast = NULL)
+
+#		Calculate means and sem
+dat2.means.melt <- ddply(dat2.melt, c("group.factor", "cond", "v1.mood"),
+					summarise,
+					mean = mean(score, na.rm = TRUE),
+					sd = sd(score, na.rm = TRUE),
+					# sem = sd(score)/sqrt(length(score)),
+					# lsem = mean - sem,
+					# usem = mean + sem
+					)
+
+
+dat2.means.melt <- ddply(dat2.melt, c("cond", "v1.mood", "v2.mood"),
+					summarise,
+					mean = mean(score, na.rm = TRUE),
+					sd = sd(score, na.rm = TRUE)
+					)
+
+dat2.means.melt <- ddply(dat2.melt, c("group.factor", "v1.mood"),
+					summarise,
+					mean = mean(score, na.rm = TRUE),
+					sd = sd(score, na.rm = TRUE))
+
+dat2.means.melt <- ddply(dat2.melt, c("group.factor", "cond", "v1.mood"),
+					summarise,
+					mean = mean(score, na.rm = TRUE),
+					sd = sd(score, na.rm = TRUE),
+
+
+dat2.means.melt
+
+
+```
 
 ## BAR PLOTS
 ```{r BARS-1, eval=TRUE, echo=FALSE, message=FALSE}
