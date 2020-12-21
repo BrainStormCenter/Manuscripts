@@ -160,7 +160,7 @@ corr.data = function(data) {
 
 
 # DATA
-Import data from GitHub
+##		IMPORT from GitHub
 ```{r Import-data, eval=TRUE, echo=TRUE, message=FALSE, comment = ""}
 #		IMPORT DATA FROM GITHUB
 data <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/Manuscripts/master/Mood_DMN_2gps/behavioral_data_13042020.csv'), header = TRUE)
@@ -1205,7 +1205,7 @@ newdf <- dat1 %>% filter(group.factor %in% c('HC','CLBP', 'FM')) %>%
 
 
 ## t-test Age 2 groups
-```{r ttest_Age, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+```{r ttest_Age, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
 
 ##		FINAL SUBJECT COUNT		##
 dat1 %>% count(group.factor)
@@ -1320,7 +1320,7 @@ means.stats
 
 ## CORR PLOTS
 
-```{r HC-Group, eval=TRUE, echo=FALSE, message=FALSE}
+```{r HC-Group, eval=FALSE, echo=FALSE, message=FALSE}
 ######		HC GROUP			####
 dat.HC2 <- dat.HC %>% select(!"group.factor", -isi_total)
 dat.HC2 <- dat.HC2 %>% select(!"slpDist", -TIB)
@@ -1362,7 +1362,7 @@ corr.data(dat.HC2) %>%
 ```
 
 
-```{r CLBP-Group, eval=TRUE, echo=FALSE, message=FALSE}
+```{r CLBP-Group, eval=FALSE, echo=FALSE, message=FALSE}
 ######		CLBP GROUP			####
 dat.CLBP2 <- dat.CLBP %>% select(!"group.factor", -isi_total)
 dat.CLBP2 <- dat.CLBP2 %>% select(!"slpDist", -TIB)
@@ -1404,7 +1404,7 @@ corr.data(dat.CLBP2) %>%
 ```
 
 
-```{r FM-Group, eval=TRUE, echo=FALSE, message=FALSE}
+```{r FM-Group, eval=FALSE, echo=FALSE, message=FALSE}
 ######		FM GROUP			####
 dat.FM2 <- dat.FM %>% select(!"group.factor", -isi_total)
 dat.FM2 <- dat.FM2 %>% select(!"slpDist", -TIB)
@@ -1446,7 +1446,7 @@ corr.data(dat.FM2) %>%
 ```
 
 
-```{r Pain-Groups, eval=TRUE, echo=FALSE, message=FALSE}
+```{r Pain-Groups, eval=FALSE, echo=FALSE, message=FALSE}
 ######		PAIN GROUPS			####
 dat.pain2 <- dat.pain %>% select(!"group.factor", -isi_total)
 dat.pain2 <- dat.pain2 %>% select(!"slpDist", -TIB)
@@ -1574,12 +1574,17 @@ dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
 								"visit2moodpre", "visit2moodpost"
 								)
 
+# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
+dat2 <- filter(dat2, dat2$visit1moodpre != "NA")
+
 dat2$ID <- factor(dat2$ID) # ID must be a factor
 
 dat2 %>% count(group.factor)
 
-# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
-dat2 <- filter(dat2, dat2$visit1moodpre != "NA")
+##			This contains code to and from various forums
+#	May 3, 2020: Issues with summary functions for bar charts
+zData <- head(dput(dat2),10)
+head(dput(dat2),10)
 
 colnames(dat2)
 view(dat2)
@@ -1631,7 +1636,8 @@ dat2.means.melt <- ddply(dat2.melt, c("group.factor", "v1.mood"),
 dat2.means.melt <- ddply(dat2.melt, c("group.factor", "cond", "v1.mood"),
 					summarise,
 					mean = mean(score, na.rm = TRUE),
-					sd = sd(score, na.rm = TRUE),
+					sd = sd(score, na.rm = TRUE)
+					)
 
 
 dat2.means.melt
