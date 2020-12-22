@@ -917,7 +917,7 @@ dat.pain <- dat.sm %>%
 #		DONE AS OF March 31, 2020
 ```
 
-#				SUBSET MOOD
+#				MOOD t-test
 ```{r Mood_Subset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 #	Need to compare mood pre positive by group
 #	Need to compare mood pre negative by group
