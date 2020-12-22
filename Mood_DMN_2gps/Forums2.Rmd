@@ -2,69 +2,60 @@
 title: "zdat_forum"
 author: "Jason"
 date: "12/20/2020"
-output: html_document
+output: 
+  html_document: 
+    toc: yes
+    number_sections: yes
+editor_options: 
+  chunk_output_type: console
 ---
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-#		NOT NEEDED RIGHT NOW
-```{r , eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
-library(dplyr)
-library(tidyverse)
+# LIBRARIES
+```{r Libraries, eval=TRUE, echo=TRUE, results=FALSE, collapse=TRUE, message=FALSE}
+# library(multcomp)
+# library(knitr)
+# library(readr)
+library(formatR)
+library(caret)
+library(kableExtra)
+library(psych)
+library(corrplot)
+library(janitor)
+library(ggpubr)
+library(ggsignif)
+library(plyr)
 library(reshape2)
+library(tidyverse)
 library(reprex)
-
-
-zdat <- 
-structure(list(
-	ID = structure(1:10, 
-				   .Label = c("IP004", "IP005", "IP007", "IP008", "IP009",
-				   		   "IP010", "IP012", "IP013", "IP015", "IP016"), 
-				   class = "factor"), 
-	group = structure(c(1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L), 
-					  .Label = c("HC", "CLBP"), 
-					  class = "factor"), 
-	v1.cond = structure(c(1L, 2L, 2L, 2L, 2L, 2L, 2L, 1L, 2L, 1L), 
-		.Label = c("pos", "neg"), class = "factor"), 
-	v2.cond = structure(c(2L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 1L, 2L), 
-						.Label = c("pos", "neg"), 
-						class = "factor"), 
-	v1pre = c(7, 1, 0, 0, 1, 0, 0, 4, 0, 6), 
-	v1post = c(9, 5, 5, 5.5, 5, 2, 7, 9, 5, 6), 
-	v2pre = c(1, 5, 1, 3, 5, 0, 3, 0, 5, 0), 
-	v2post = c(5, 6, 4, 5.5, 5, 4, 4, 3, 7, 3)), 
-	row.names = c(NA, -10L), 
-	class = "data.frame")
-
-
-#		Convert to long format
-zdat.melt <- melt(zdat, id.vars = c("ID", "group", "v1.cond", "v2.cond")) 
-colnames(zdat.melt)
-
-names(zdat.melt)[names(zdat.melt)=="variable"] <- "event"
-names(zdat.melt)[names(zdat.melt)=="value"] <- "score"
-
-
-library(dplyr)
-zdat1.melt <- zdat.melt %>% select(-v2.cond) %>% group_by(v1.cond,event)
-zdat2.melt <- zdat.melt %>% select(-v1.cond) %>% group_by(v2.cond,event)
-
-zdat3 <- merge(zdat1.melt, zdat2.melt)
-
+library(here)
+here()
+dr_here(show_reason = FALSE)
 
 ```
 
 #		CONTINGENCY TABLE
 ```{r ContingencyTable, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-suppressPackageStartupMessages({
-  library(dplyr)
-  library(reshape)
-  library(tidyverse)
-})
+# suppressPackageStartupMessages({
+# 	library(dplyr)
+# 	library(tidyverse)
+# 	library(reshape)
+# 	library(reprex)
+# })
+
+
+library(dplyr)
+library(tidyverse)
+library(reshape)
+library(reprex)
+
+
 zdat <-
   structure(list(
     ID = structure(1:10,
@@ -100,8 +91,6 @@ zdat <-
 # convention disfavors using . as a name delimiter
 zdat_melt <- melt(zdat, id.vars = c("ID", "group", "v1.cond", "v2.cond"))
 colnames(zdat_melt)
-#> [1] "ID"       "group"    "v1.cond"  "v2.cond"  "variable" "value"
-# > [1] "ID"       "group"    "v1.cond"  "v2.cond"  "variable" "value"
 
 # alternative renaming
 colnames(zdat_melt) <- c("ID","group","v1_cond","v2_cond","event","score")
@@ -110,49 +99,25 @@ colnames(zdat_melt) <- c("ID","group","v1_cond","v2_cond","event","score")
 ```
 
 
-# FROM FORUM
-```{r test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
-
-zdat_melt %>% 
-  select(-c(v1_cond,v2_cond)) %>%
-  filter(group == "gp1") %>%
-  select(event,score) -> grp1
-
-zdat_melt %>% 
-  select(-c(v1_cond,v2_cond)) %>%
-  filter(group == "gp2") %>%
-  select(event,score) -> grp2
 
 
-table(grp1)
-#>         score
-#> event    0 1 3 4 5 7 9
-#>   v1pre  3 1 0 0 0 1 0
-#>   v1post 0 0 0 0 3 1 1
-#>   v2pre  0 2 1 0 2 0 0
-#>   v2post 0 0 0 2 2 1 0
-table(grp2)
-
-```
-
-
-#		POSITIVE
+#		POSITIVE PRE
 ## Gp1 Pos Pre
 ```{r Gp1PosPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+# 
+# gp1 <- filter(zdat_melt, group == "gp1") 
+# 
+# #	Tibble needed for joining later
+# gp1 <- as_tibble(gp1)
 
-####			GROUP-1 POSITIVE PRE	####
-gp1 <- filter(zdat_melt, group == "gp1") 
 
-#	Tibble needed for joining later
-gp1 <- as_tibble(gp1)
-
-#	Working with Visit-1  positive and pre only
+#				VISIT-1
+#		positive and pre only
 gp1v1pos_pre <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
 	filter(group == "gp1") %>% 
 	filter(v1_cond == "pos") %>% 
 	filter(event == "v1pre")
-# gp1v1pos_pre$event <- str_replace_all(gp1v1pos_pre$event,
-									  # c("v1pre" = "pre"))
+gp1v1pos_pre$event <- str_replace_all(gp1v1pos_pre$event, c("v1pre" = "pre"))
 
 #	Change name to facilitate the full join later
 names(gp1v1pos_pre)[names(gp1v1pos_pre) == 'v1_cond'] <- 'cond'
@@ -160,8 +125,8 @@ names(gp1v1pos_pre)[names(gp1v1pos_pre) == 'v1_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp1v1pos_pre <- as_tibble(gp1v1pos_pre)
 
-
-#	Working with Visit-2 positive and pre only
+################	VISIT-2		################
+#		positive and pre only
 gp1v2pos_pre <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp1") %>% 
 	filter(v2_cond == "pos") %>% 
@@ -175,30 +140,35 @@ names(gp1v2pos_pre)[names(gp1v2pos_pre) == 'v2_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp1v2pos_pre <- as_tibble(gp1v2pos_pre)
 
-#	Join the two tables into one representing Gp1 positive pre scores
+
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp1 positive pre scores
 gp1_pos_pre <- full_join(gp1v1pos_pre, gp1v2pos_pre)	
 
 
-#rm(gp1v1pos_pre, gp1v2pos_pre)
-
+rm(gp1v1pos_pre, gp1v2pos_pre)
 
 ```
 
 
 ## Gp2 Pos Pre
-```{r gp2PosPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+```{r Gp2PosPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-####			GROUP-1 POSITIVE PRE	####
-gp2 <- filter(zdat_melt, group == "gp2") 
+####			GROUP-2 POSITIVE PRE	####
+# gp2 <- filter(zdat_melt, group == "gp2") 
+# 
+# #	Tibble needed for joining later
+# gp2 <- as_tibble(gp2)
 
-#	Tibble needed for joining later
-gp2 <- as_tibble(gp2)
-
-#	Working with Visit-1  positive and pre only
+#				VISIT-1
+#		positive and pre only
 gp2v1pos_pre <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
 	filter(group == "gp2") %>% 
 	filter(v1_cond == "pos") %>% 
 	filter(event == "v1pre")
+
+#view(gp2v1pos_pre)
+
 gp2v1pos_pre$event <- str_replace_all(gp2v1pos_pre$event,
 									  c("v1pre" = "pre"))
 
@@ -209,6 +179,8 @@ names(gp2v1pos_pre)[names(gp2v1pos_pre) == 'v1_cond'] <- 'cond'
 gp2v1pos_pre <- as_tibble(gp2v1pos_pre)
 
 
+################	VISIT-2		################
+#		positive and pre only
 #	Working with Visit-2 positive and pre only
 gp2v2pos_pre <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp2") %>% 
@@ -217,41 +189,46 @@ gp2v2pos_pre <-  zdat_melt %>% dplyr::select( - v1_cond)  %>%
 gp2v2pos_pre$event <- str_replace_all(gp2v2pos_pre$event, 
 									  c("v2pre" = "pre"))
 
+#view(gp2v2pos_pre)
+
 #	Change name to facilitate the full join later
 names(gp2v2pos_pre)[names(gp2v2pos_pre) == 'v2_cond'] <- 'cond'
 
 #	Tibble needed for joining later
 gp2v2pos_pre <- as_tibble(gp2v2pos_pre)
 
-#	Join the two tables into one representing gp2 positive pre scores
+
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp2 positive pre scores
+
 gp2_pos_pre <- full_join(gp2v1pos_pre, gp2v2pos_pre)	
 
-
-#rm(gp2v1pos_pre, gp2v2pos_pre)
-
+rm(gp2v1pos_pre, gp2v2pos_pre)
 
 ```
 
 
-
-
-
-
+#		POSITIVE POST
 ## Gp1 Pos Post
 ```{r Gp1PosPost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-gp1 <- filter(zdat_melt, group == "gp1") 
+# gp1 <- filter(zdat_melt, group == "gp1") 
+# 
+# #	Tibble needed for joining later
+# gp1 <- as_tibble(gp1)
 
-#	Tibble needed for joining later
-gp1 <- as_tibble(gp1)
 
-#	Working with Visit-1  positive and post only
+########		VISIT-1		################
+#		positive and post only
+
 gp1v1pos_post <-  zdat_melt %>% dplyr::select( - v2_cond) %>% 
 	filter(group == "gp1") %>% 
 	filter(v1_cond == "pos") %>% 
 	filter(event == "v1post")
 gp1v1pos_post$event <- str_replace_all(gp1v1pos_post$event,
 									  c("v1post" = "post"))
+
+#view(gp1v1pos_post)
 
 #	Change name to facilitate the full join later
 names(gp1v1pos_post)[names(gp1v1pos_post) == 'v1_cond'] <- 'cond'
@@ -260,24 +237,29 @@ names(gp1v1pos_post)[names(gp1v1pos_post) == 'v1_cond'] <- 'cond'
 gp1v1pos_post <- as_tibble(gp1v1pos_post)
 
 
-#	Working with Visit-2 positive and post only
+########		VISIT-2		################
+#		positive and post only
+
 gp1v2pos_post <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp1") %>% 
 	filter(v2_cond == "pos") %>% 
 	filter(event == "v2post")
 gp1v2pos_post$event <- str_replace_all(gp1v2pos_post$event, 
 									  c("v2post" = "post"))
-
+#view(gp1v2pos_post)
 #	Change name to facilitate the full join later
 names(gp1v2pos_post)[names(gp1v2pos_post) == 'v2_cond'] <- 'cond'
 
 #	Tibble needed for joining later
 gp1v2pos_post <- as_tibble(gp1v2pos_post)
 
-#	Join the two tables into one representing Gp1 positive post scores
+
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp1 positive post scores
+
 gp1_pos_post <- full_join(gp1v1pos_post, gp1v2pos_post)
 
-#rm(gp1v1pos_post, gp1v2pos_post)
+rm(gp1v1pos_post, gp1v2pos_post)
 
 ```
 
@@ -286,12 +268,13 @@ gp1_pos_post <- full_join(gp1v1pos_post, gp1v2pos_post)
 ## Gp2 Pos Post
 ```{r gp2PosPost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-gp2 <- filter(zdat_melt, group == "gp2") 
+# gp2 <- filter(zdat_melt, group == "gp2") 
+# 
+# #	Tibble needed for joining later
+# gp2 <- as_tibble(gp2)
 
-#	Tibble needed for joining later
-gp2 <- as_tibble(gp2)
-
-#	Working with Visit-1  positive and post only
+########		VISIT-1		################
+#		positive and post only
 gp2v1pos_post <-  zdat_melt %>% dplyr::select( - v2_cond) %>% 
 	filter(group == "gp2") %>% 
 	filter(v1_cond == "pos") %>% 
@@ -305,8 +288,10 @@ names(gp2v1pos_post)[names(gp2v1pos_post) == 'v1_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp2v1pos_post <- as_tibble(gp2v1pos_post)
 
+#view(gp2v1pos_post)
 
-#	Working with Visit-2 positive and post only
+################	VISIT-2		################
+#		positive and post only
 gp2v2pos_post <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp2") %>% 
 	filter(v2_cond == "pos") %>% 
@@ -320,29 +305,28 @@ names(gp2v2pos_post)[names(gp2v2pos_post) == 'v2_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp2v2pos_post <- as_tibble(gp2v2pos_post)
 
-#	Join the two tables into one representing gp2 positive post scores
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp2 positive pre scores
+
 gp2_pos_post <- full_join(gp2v1pos_post, gp2v2pos_post)
 
-#rm(gp2v1pos_post, gp2v2pos_post)
+rm(gp2v1pos_post, gp2v2pos_post)
 
 ```
 
-
-
-
-
-
-#		NEGATIVE
+#		NEGATIVE PRE
 ## Gp1 Neg Pre
 ```{r Gp1negPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 ####			GROUP-1 NEGITIVE PRE	####
-gp1 <- filter(zdat_melt, group == "gp1") 
+# gp1 <- filter(zdat_melt, group == "gp1") 
+# 
+# #	Tibble needed for joining later
+# gp1 <- as_tibble(gp1)
 
-#	Tibble needed for joining later
-gp1 <- as_tibble(gp1)
 
-#	Working with Visit-1  negitive and pre only
+########		VISIT-1		################
+#		negative and pre only
 gp1v1neg_pre <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
 	filter(group == "gp1") %>% 
 	filter(v1_cond == "neg") %>% 
@@ -357,7 +341,8 @@ names(gp1v1neg_pre)[names(gp1v1neg_pre) == 'v1_cond'] <- 'cond'
 gp1v1neg_pre <- as_tibble(gp1v1neg_pre)
 
 
-#	Working with Visit-2 negitive and pre only
+################	VISIT-2		################
+#		negative and pre only
 gp1v2neg_pre <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp1") %>% 
 	filter(v2_cond == "neg") %>% 
@@ -371,72 +356,26 @@ names(gp1v2neg_pre)[names(gp1v2neg_pre) == 'v2_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp1v2neg_pre <- as_tibble(gp1v2neg_pre)
 
-#	Join the two tables into one representing Gp1 negitive pre scores
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp1 negative pre scores	#	
 gp1_neg_pre <- full_join(gp1v1neg_pre, gp1v2neg_pre)	
 
-
-#rm(gp1v1neg_pre, gp1v2neg_pre)
-
+rm(gp1v1neg_pre, gp1v2neg_pre)
 
 ```
-
-
-## Gp1 Neg post
-```{r Gp1negpost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
-
-gp1 <- filter(zdat_melt, group == "gp1") 
-
-#	Tibble needed for joining later
-gp1 <- as_tibble(gp1)
-
-#	Working with Visit-1  negitive and post only
-gp1v1neg_post <-  zdat_melt %>% dplyr::select( - v2_cond) %>% 
-	filter(group == "gp1") %>% 
-	filter(v1_cond == "neg") %>% 
-	filter(event == "v1post")
-gp1v1neg_post$event <- str_replace_all(gp1v1neg_post$event,
-									   c("v1post" = "post"))
-
-#	Change name to facilitate the full join later
-names(gp1v1neg_post)[names(gp1v1neg_post) == 'v1_cond'] <- 'cond'
-
-#	Tibble needed for joining later
-gp1v1neg_post <- as_tibble(gp1v1neg_post)
-
-
-#	Working with Visit-2 negitive and post only
-gp1v2neg_post <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
-	filter(group == "gp1") %>% 
-	filter(v2_cond == "neg") %>% 
-	filter(event == "v2post")
-gp1v2neg_post$event <- str_replace_all(gp1v2neg_post$event, 
-									   c("v2post" = "post"))
-
-#	Change name to facilitate the full join later
-names(gp1v2neg_post)[names(gp1v2neg_post) == 'v2_cond'] <- 'cond'
-
-#	Tibble needed for joining later
-gp1v2neg_post <- as_tibble(gp1v2neg_post)
-
-#	Join the two tables into one representing Gp1 negitive post scores
-gp1_neg_post <- full_join(gp1v1neg_post, gp1v2neg_post)
-
-#rm(gp1v1neg_post, gp1v2neg_post)
-
-```
-
-
 
 ## Gp2 Neg Pre
 ```{r gp2negPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-####			GROUP-1 negITIVE PRE	####
-gp2 <- filter(zdat_melt, group == "gp2") 
+####			GROUP-2 NEGATIVE PRE	####
+# gp2 <- filter(zdat_melt, group == "gp2") 
+# 
+# #	Tibble needed for joining later
+# gp2 <- as_tibble(gp2)
 
-#	Tibble needed for joining later
-gp2 <- as_tibble(gp2)
+########		VISIT-1		################
+#		NEGATIVE and pre only
 
-#	Working with Visit-1  negitive and pre only
 gp2v1neg_pre <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
 	filter(group == "gp2") %>% 
 	filter(v1_cond == "neg") %>% 
@@ -451,7 +390,9 @@ names(gp2v1neg_pre)[names(gp2v1neg_pre) == 'v1_cond'] <- 'cond'
 gp2v1neg_pre <- as_tibble(gp2v1neg_pre)
 
 
-#	Working with Visit-2 negitive and pre only
+################	VISIT-2		################
+#		negative and pre only
+
 gp2v2neg_pre <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp2") %>% 
 	filter(v2_cond == "neg") %>% 
@@ -465,12 +406,68 @@ names(gp2v2neg_pre)[names(gp2v2neg_pre) == 'v2_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp2v2neg_pre <- as_tibble(gp2v2neg_pre)
 
-#	Join the two tables into one representing gp2 negitive pre scores
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp2 negative pre scores
+
 gp2_neg_pre <- full_join(gp2v1neg_pre, gp2v2neg_pre)	
 
+rm(gp2v1neg_pre, gp2v2neg_pre)
 
-#rm(gp2v1neg_pre, gp2v2neg_pre)
+```
 
+
+#		NEGATIVE POST
+## Gp1 Neg post
+```{r Gp1negpost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+# 
+# gp1 <- filter(zdat_melt, group == "gp1") 
+# 
+# #	Tibble needed for joining later
+# gp1 <- as_tibble(gp1)
+
+########		VISIT-1		################
+#		negative and post only
+
+gp1v1neg_post <-  zdat_melt %>% dplyr::select( - v2_cond) %>% 
+	filter(group == "gp1") %>% 
+	filter(v1_cond == "neg") %>% 
+	filter(event == "v1post")
+gp1v1neg_post$event <- str_replace_all(gp1v1neg_post$event,
+									   c("v1post" = "post"))
+
+#	Change name to facilitate the full join later
+names(gp1v1neg_post)[names(gp1v1neg_post) == 'v1_cond'] <- 'cond'
+
+#	Tibble needed for joining later
+gp1v1neg_post <- as_tibble(gp1v1neg_post)
+
+#view(gp1v1neg_post)
+
+
+
+################	VISIT-2		################
+#		negative and post only
+
+gp1v2neg_post <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
+	filter(group == "gp1") %>% 
+	filter(v2_cond == "neg") %>% 
+	filter(event == "v2post")
+gp1v2neg_post$event <- str_replace_all(gp1v2neg_post$event, 
+									   c("v2post" = "post"))
+
+#	Change name to facilitate the full join later
+names(gp1v2neg_post)[names(gp1v2neg_post) == 'v2_cond'] <- 'cond'
+
+#	Tibble needed for joining later
+gp1v2neg_post <- as_tibble(gp1v2neg_post)
+
+
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp1 negative post scores
+
+gp1_neg_post <- full_join(gp1v1neg_post, gp1v2neg_post)
+
+# rm(gp1v1neg_post, gp1v2neg_post)
 
 ```
 
@@ -478,12 +475,14 @@ gp2_neg_pre <- full_join(gp2v1neg_pre, gp2v2neg_pre)
 ## Gp2 Neg post
 ```{r gp2negpost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
-gp2 <- filter(zdat_melt, group == "gp2") 
+# gp2 <- filter(zdat_melt, group == "gp2") 
+# 
+# #	Tibble needed for joining later
+# gp2 <- as_tibble(gp2)
 
-#	Tibble needed for joining later
-gp2 <- as_tibble(gp2)
+########		VISIT-1		################
+#		negative and post only
 
-#	Working with Visit-1  negitive and post only
 gp2v1neg_post <-  zdat_melt %>% dplyr::select( - v2_cond) %>% 
 	filter(group == "gp2") %>% 
 	filter(v1_cond == "neg") %>% 
@@ -498,7 +497,9 @@ names(gp2v1neg_post)[names(gp2v1neg_post) == 'v1_cond'] <- 'cond'
 gp2v1neg_post <- as_tibble(gp2v1neg_post)
 
 
-#	Working with Visit-2 negitive and post only
+################	VISIT-2		################
+#		negative and post only
+
 gp2v2neg_post <-  zdat_melt %>% dplyr::select( - v1_cond)  %>% 
 	filter(group == "gp2") %>% 
 	filter(v2_cond == "neg") %>% 
@@ -512,34 +513,33 @@ names(gp2v2neg_post)[names(gp2v2neg_post) == 'v2_cond'] <- 'cond'
 #	Tibble needed for joining later
 gp2v2neg_post <- as_tibble(gp2v2neg_post)
 
-#	Join the two tables into one representing gp2 negitive post scores
+##############		JOIN GROUPS		############
+#	Join the two tables representing Gp2 negative post scores
+
 gp2_neg_post <- full_join(gp2v1neg_post, gp2v2neg_post)
 
-# #rm(gp2v1neg_post, gp2v2neg_post)
+rm(gp2v1neg_post, gp2v2neg_post)
 
 ```
 
-
-
-
-#		Gp1 Full Join
+#		Full Joining
 ```{r Gp1FullJoin, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 zgp1_neg <- full_join(gp1_neg_post, gp1_neg_pre)
 
 zgp1_pos <- full_join(gp1_pos_post, gp1_pos_pre)
 
-zgp1_full <- full_join(zgp1_neg, zgp1_pos)
+# zgp1_full <- full_join(zgp1_neg, zgp1_pos)
 
 
 zgp2_neg <- full_join(gp2_neg_post, gp2_neg_pre)
 
 zgp2_pos <- full_join(gp2_pos_post, gp2_pos_pre)
 
-zgp2_full <- full_join(zgp2_neg, zgp2_pos)
+# zgp2_full <- full_join(zgp2_neg, zgp2_pos)
 
 
-zz_full <- full_join(zgp1_full, zgp2_full)
+# zz_full <- full_join(zgp1_full, zgp2_full)
 
 # 
 # rm(zgp1_full, zgp2_full, zgp1_neg, zgp1_pos)
@@ -550,26 +550,29 @@ zz_full <- full_join(zgp1_full, zgp2_full)
 
 
 
+#		FULL JOINING
 
-
-#		Pos Pre 
+##		Pos Pre 
 ```{r PosPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 zzz_pos_pre <- full_join(gp1_pos_pre, gp2_pos_pre)
-view(zzz_pos_pre)
+#view(zzz_pos_pre)
 
+require(reshape)
 zzz_pos_pre <- rename(zzz_pos_pre, c(score="pospre"))
+colnames(zzz_pos_pre)
+#view(zzz_pos_pre)
 
 ```
 
-#		Pos Post
+##		Pos Post
 ```{r PosPost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 zzz_pos_post <- full_join(gp1_pos_post, gp2_pos_post)
-view(zzz_pos_post)
 
 zzz_pos_post <- rename(zzz_pos_post, c(score="pospost"))
 
+#view(zzz_pos_post)
 
 ```
 
@@ -588,7 +591,7 @@ zzzz_pos_full <- zzzz_pos_full %>% dplyr::select( -c(cond, event))
 ```{r NegPre, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 zzz_neg_pre <- full_join(gp1_neg_pre, gp2_neg_pre)
-view(zzz_neg_pre)
+#view(zzz_neg_pre)
 
 zzz_neg_pre <- rename(zzz_neg_pre, c(score="negpre"))
 
@@ -599,9 +602,10 @@ zzz_neg_pre <- rename(zzz_neg_pre, c(score="negpre"))
 ```{r NegPost, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 zzz_neg_post <- full_join(gp1_neg_post, gp2_neg_post)
-view(zzz_neg_post)
 
 zzz_neg_post <- rename(zzz_neg_post, c(score="negpost"))
+
+#view(zzz_neg_post)
 
 ```
 
@@ -633,12 +637,12 @@ z_FULL <- full_join(zzzz_pos_full, zzzz_neg_full)
 ```{r ttests, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 
-mean(gp1_neg_post$score) == mean(gp2_neg_post$score)
+# mean(gp1_neg_post$score) == mean(gp2_neg_post$score)
+# 
+# ttest = t.test(gp1_neg_post$score, gp2_neg_post$score)
 
-ttest = t.test(gp1_neg_post$score, gp2_neg_post$score)
 
-
-names(ttest)
+# names(ttest)
 
 attach(z_FULL)
 t.test(pospre ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
@@ -648,7 +652,7 @@ t.test(negpost ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
 
 
-t.test(zdat$v2post ~ zdat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+# t.test(zdat$v2post ~ zdat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
 
 
 ```
@@ -656,96 +660,3 @@ t.test(zdat$v2post ~ zdat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, pai
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#		JUNK
-```{r JUNK, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
-
-
-
-
-filter(event == "v1pre" | event == "v2pre")  %>% 
-
-
-
-gp1v1pospre <- str_replace_all(gp1$event, c("v1pre" = "pre"))
-
-gp1$event <- str_replace_all(gp1$event, c("v1pre" = "pre"))
-#, "v2pre" = "pre"))	
-			   
-gp1e <- filter(zdat_melt, group == "gp1") %>% 
-	filter(v1_cond == "pos")
-			   
-gp1f <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
-	filter(group == "gp1") %>% 
-	filter(v1_cond == "pos")  %>% 
-	filter(event == "v1pre" | event == "v2pre")
-
-gp1a <-  zdat_melt %>% #dplyr::select( - v2_cond)  %>% 
-	filter(group == "gp1") %>% 
-	filter(event == "v1pre" | event == "v2pre") 
-
-
-	filter(v1_cond == "pos")  %>% 
-
-gp1g$event <- str_replace_all(gp1g$event, c("v1pre" = "pre", "v2pre" = "pre"))			   
-
-
-# x <- c("1 house", "2 cars", "3 people")
-# str_replace_all(x, c("1" = "one", "2" = "two", "3" = "three"))
-
-#> [1] "one house"    "two cars"     "three people"
-
-df$patients <- ifelse(df$patients==150, 100, ifelse(df$patients==350, 300, NA))
-
-
-			   
-			   # event == "v1pre" | event == "v2pre")  %>% 
-	filter(v1_cond == "pos" | v2_cond == "pos")
-	
-	#%>%
-	select(event, score)
-
-zdat_melt %>% 
-  select(-c(v1_cond,v2_cond)) %>%
-  filter(group == "gp2") %>%
-  select(event,score) -> grp2
-
-
-table(grp1)
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r , eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
-
-library(Stat2Data)
-library(rms)
-data("NFLStandings2016")
-
-anova(rms::ols(WinPct ~ PointsFor + PointsAgainst, data = NFLStandings2016))
-
-```

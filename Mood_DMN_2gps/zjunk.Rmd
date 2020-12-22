@@ -35,6 +35,86 @@ response.data <- data.frame(stringsAsFactors = FALSE,
 
 ```
 
+#		JUNK
+```{r JUNK, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+
+
+
+filter(event == "v1pre" | event == "v2pre")  %>% 
+
+
+
+gp1v1pospre <- str_replace_all(gp1$event, c("v1pre" = "pre"))
+
+gp1$event <- str_replace_all(gp1$event, c("v1pre" = "pre"))
+#, "v2pre" = "pre"))	
+			   
+gp1e <- filter(zdat_melt, group == "gp1") %>% 
+	filter(v1_cond == "pos")
+			   
+gp1f <-  zdat_melt %>% dplyr::select( - v2_cond)  %>% 
+	filter(group == "gp1") %>% 
+	filter(v1_cond == "pos")  %>% 
+	filter(event == "v1pre" | event == "v2pre")
+
+gp1a <-  zdat_melt %>% #dplyr::select( - v2_cond)  %>% 
+	filter(group == "gp1") %>% 
+	filter(event == "v1pre" | event == "v2pre") 
+
+
+	filter(v1_cond == "pos")  %>% 
+
+gp1g$event <- str_replace_all(gp1g$event, c("v1pre" = "pre", "v2pre" = "pre"))			   
+
+
+# x <- c("1 house", "2 cars", "3 people")
+# str_replace_all(x, c("1" = "one", "2" = "two", "3" = "three"))
+
+#> [1] "one house"    "two cars"     "three people"
+
+df$patients <- ifelse(df$patients==150, 100, ifelse(df$patients==350, 300, NA))
+
+
+			   
+			   # event == "v1pre" | event == "v2pre")  %>% 
+	filter(v1_cond == "pos" | v2_cond == "pos")
+	
+	#%>%
+	select(event, score)
+
+zdat_melt %>% 
+  select(-c(v1_cond,v2_cond)) %>%
+  filter(group == "gp2") %>%
+  select(event,score) -> grp2
+
+
+table(grp1)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r , eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+library(Stat2Data)
+library(rms)
+data("NFLStandings2016")
+
+anova(rms::ols(WinPct ~ PointsFor + PointsAgainst, data = NFLStandings2016))
+
+```
 
 
 
@@ -74,3 +154,100 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+
+
+
+#		NOT NEEDED RIGHT NOW
+<!--
+```{r , eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+library(dplyr)
+library(tidyverse)
+library(reshape2)
+library(reprex)
+
+
+zdat <-
+structure(list(
+	ID = structure(1:10,
+				   .Label = c("IP004", "IP005", "IP007", "IP008", "IP009",
+				   		   "IP010", "IP012", "IP013", "IP015", "IP016"),
+				   class = "factor"),
+	group = structure(c(1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L),
+					  .Label = c("HC", "CLBP"),
+					  class = "factor"),
+	v1.cond = structure(c(1L, 2L, 2L, 2L, 2L, 2L, 2L, 1L, 2L, 1L),
+		.Label = c("pos", "neg"), class = "factor"),
+	v2.cond = structure(c(2L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 1L, 2L),
+						.Label = c("pos", "neg"),
+						class = "factor"),
+	v1pre = c(7, 1, 0, 0, 1, 0, 0, 4, 0, 6),
+	v1post = c(9, 5, 5, 5.5, 5, 2, 7, 9, 5, 6),
+	v2pre = c(1, 5, 1, 3, 5, 0, 3, 0, 5, 0),
+	v2post = c(5, 6, 4, 5.5, 5, 4, 4, 3, 7, 3)),
+	row.names = c(NA, -10L),
+	class = "data.frame")
+
+
+#		Convert to long format
+zdat.melt <- melt(zdat, id.vars = c("ID", "group", "v1.cond", "v2.cond"))
+colnames(zdat.melt)
+
+names(zdat.melt)[names(zdat.melt)=="variable"] <- "event"
+names(zdat.melt)[names(zdat.melt)=="value"] <- "score"
+
+
+library(dplyr)
+zdat1.melt <- zdat.melt %>% select(-v2.cond) %>% group_by(v1.cond,event)
+zdat2.melt <- zdat.melt %>% select(-v1.cond) %>% group_by(v2.cond,event)
+
+zdat3 <- merge(zdat1.melt, zdat2.melt)
+
+
+``` 
+-->
+
+
+
+
+
+
+
+# FROM FORUM
+<!--
+```{r test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+zdat_melt %>% 
+  select(-c(v1_cond,v2_cond)) %>%
+  filter(group == "gp1") %>%
+  select(event,score) -> grp1
+
+zdat_melt %>% 
+  select(-c(v1_cond,v2_cond)) %>%
+  filter(group == "gp2") %>%
+  select(event,score) -> grp2
+
+
+table(grp1)
+#>         score
+#> event    0 1 3 4 5 7 9
+#>   v1pre  3 1 0 0 0 1 0
+#>   v1post 0 0 0 0 3 1 1
+#>   v2pre  0 2 1 0 2 0 0
+#>   v2post 0 0 0 2 2 1 0
+table(grp2)
+
+```
+-->
+
+
+
+
+
+
+
+
+
