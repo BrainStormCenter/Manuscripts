@@ -64,6 +64,15 @@ view(dat2)
 
 ```{r Moodsubset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
+dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
+							   "v1.mood", "v2.mood",
+							   "visit1moodpre", "visit1moodpost",
+							   # contains("mood")
+							   "visit2moodpre", "visit2moodpost",
+							   )
+
+view(dat2)
+
 ############			v1 POSITIVE PRE POST	 ##########
 v1pos_dat <- dat2 #filter(dat2, dat2$visit1moodpre != "NA")
 view(v1pos_dat)
@@ -180,3 +189,64 @@ t.test(pos_post, neg_post)
 
 
 ```
+
+
+
+```{r MoodANOVA, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+view(full_dat)
+
+# dat3 <- dat1 %>% dplyr::select("ID", "group.factor",
+# 							   "v1.mood", "v2.mood",
+# 							   "visit1moodpre", "visit1moodpost",
+# 							   # contains("mood")
+# 							   "visit2moodpre", "visit2moodpost",
+# 							   ) %>% 
+# 	filter(group.factor != "NA")
+# 
+# view(dat3)
+# 
+# #	SHOW LEVELS
+# levels(dat3$group.factor)
+# dat3 %>% count(group.factor)
+
+full_dat <- arrange(full_dat, group) %>% 
+	filter(group != "NA")
+
+view(full_dat)
+head(full_dat)
+
+#		VARIABLES FOR ANOVA
+#		1.	group
+#		2.	pos_pre
+#		3.	pos_post
+#		4.	neg_pre
+#		5.	neg_post
+#	
+
+# Box plots
+# ++++++++++++++++++++
+# Plot weight by group and color by group
+
+ggboxplot(full_dat, x = "group", y = "pos_pre", 
+          color = "group", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("HC", "CLBP", "FM"),
+          ylab = "Baseline mood", xlab = "Group")
+
+# Compute the analysis of variance
+Pospre_aov <- aov(pos_pre ~ group, data = full_dat)
+# Summary of the analysis
+summary(Pospre_aov)
+
+# dat3 <- order(dat3$group.factor,
+# 			levels = c("HC", "CLBP", "FM"))
+
+###		END
+
+
+
+
+
+```
+
+

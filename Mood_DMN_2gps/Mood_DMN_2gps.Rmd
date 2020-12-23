@@ -191,6 +191,7 @@ subs <- subs %>% dplyr::select("ID") # has imaging data
 #	CREATE DATA SUBSET WITH ONLY SUBJECTS WITH IMAGING DATA
 dat0 <- merge(data, subs)
 dat0 <- as_tibble(dat0)
+dat0 %>% count(group)
 
 ```
 
@@ -230,6 +231,7 @@ CHECK THAT THE DATA ARE THE CORRECT FORMAT/TYPE
 #		CLEANING AND PRESERVING ORIGINAL DATA
 
 data %>% count(group)
+dat0 %>% count(group)
 
 ##					Preserve data		##
 dat1  <- dat0
@@ -291,7 +293,7 @@ dat1$bdi_total <- as.numeric(dat1$bdi_total)
 dat1$mcgill_total <- as.numeric(dat1$mcgill_total)
 
 ##		REDUCE GROUPS TO JUST HC AND CLBP		##
-dat1   <- filter(dat1, group.factor != "FM")
+# dat1   <- filter(dat1, group.factor != "FM")
 # rm(dat1)
 # dat1 <- dat2
 
