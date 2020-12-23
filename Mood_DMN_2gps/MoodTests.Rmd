@@ -1,7 +1,7 @@
 ---
 title: "Untitled"
 author: "Jason"
-date: "12/22/2020"
+date: "12/23/2020"
 output: html_document
 ---
 
@@ -10,58 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-
-```{r JUNKmood, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
-
-#	Need to compare mood pre positive by group
-#	Need to compare mood pre negative by group
-#	Need to compare mood post positive by group
-#	Need to compare mood post negative by group
-
-##			USED FOR FINDING ORIGINAL VARIABLES		##
-colnames(select(dat1, contains("mood")))
-colnames(select(dat1, contains("cond")))
-
-dat1 %>% count(group.factor)
-
-v1Pos1_dat <- dat1 %>%
-	filter(v1mood.factor == "PosV1")
-v1Pos1_dat %>% count(group.factor)
-v1Pos1_dat2 %>% count(gp)
-
-v1Pos1_dat <- dat1 %>% dplyr::select("ID","group.factor",
-									 "v1mood.factor",
-									 "visit1moodpre"
-)
-
-
-v1Pos1_dat <- v1Pos1_dat %>%
-	filter(v1mood == "PosV1") %>%
-	filter(visit1moodpre != "NA")
-
-
-
-view(v1Pos1_dat)
-view(v1Pos1_dat2)
-
-names(v1Pos1_dat)[names(v1Pos1_dat) == 'group.factor'] <- 'gp'
-names(v1Pos1_dat)[names(v1Pos1_dat) == 'v1mood.factor'] <- 'v1mood'
-
-#		Converting data to long format
-dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
-							   "v1.mood", "v2.mood",
-							   "visit1moodpre", "visit1moodpost",
-							   # contains("mood")
-							   "visit2moodpre", "visit2moodpost",
-							   )
-
-view(dat2)
-
-```
-
-
-
-
+#				RESTRUCTURING MOOD DATA
 ```{r Moodsubset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
 
 dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
@@ -71,11 +20,11 @@ dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
 							   "visit2moodpre", "visit2moodpost",
 							   )
 
-view(dat2)
+#view(dat2)
 
 ############			v1 POSITIVE PRE POST	 ##########
 v1pos_dat <- dat2 #filter(dat2, dat2$visit1moodpre != "NA")
-view(v1pos_dat)
+#view(v1pos_dat)
 
 v1pos_dat <- v1pos_dat %>% 
 	dplyr::select("ID", "group.factor", "v1.mood",
@@ -86,16 +35,15 @@ names(v1pos_dat)[names(v1pos_dat) == 'visit1moodpre'] <- 'pos_pre'
 names(v1pos_dat)[names(v1pos_dat) == 'visit1moodpost'] <- 'pos_post'
 names(v1pos_dat)[names(v1pos_dat) == 'v1.mood'] <- 'mood'
 
-
 v1pos_dat <- as_tibble(v1pos_dat)
 head(v1pos_dat)
 
-view(v1pos_dat)
+#view(v1pos_dat)
 
 ############			v1 NEGATIVE PRE POST	 ##########
 
 v1neg_dat <- dat2 #filter(dat2, dat2$visit1moodpre != "NA")
-view(v1neg_dat)
+#view(v1neg_dat)
 
 v1neg_dat <- v1neg_dat %>% 
 	dplyr::select("ID", "group.factor", "v1.mood",
@@ -109,12 +57,12 @@ names(v1neg_dat)[names(v1neg_dat) == 'v1.mood'] <- 'mood'
 v1neg_dat <- as_tibble(v1neg_dat)
 head(v1neg_dat)
 
-view(v1neg_dat)
+#view(v1neg_dat)
 
 
 ############			v2 POSITIVE PRE POST	 ##########
 v2pos_dat <- dat2 #filter(dat2, dat2$visit2moodpre != "NA")
-view(v2pos_dat)
+#view(v2pos_dat)
 
 v2pos_dat <- v2pos_dat %>% 
 	dplyr::select("ID", "group.factor", "v2.mood",
@@ -129,12 +77,12 @@ names(v2pos_dat)[names(v2pos_dat) == 'v2.mood'] <- 'mood'
 v2pos_dat <- as_tibble(v2pos_dat)
 head(v2pos_dat)
 
-view(v2pos_dat)
+#view(v2pos_dat)
 
 ############			v2 NEGATIVE PRE POST	 ##########
 
 v2neg_dat <- dat2 #filter(dat2, dat2$visit2moodpre != "NA")
-view(v2neg_dat)
+#view(v2neg_dat)
 
 v2neg_dat <- v2neg_dat %>% 
 	dplyr::select("ID", "group.factor", "v2.mood",
@@ -148,33 +96,48 @@ names(v2neg_dat)[names(v2neg_dat) == 'v2.mood'] <- 'mood'
 v2neg_dat <- as_tibble(v2neg_dat)
 head(v2neg_dat)
 
-view(v2neg_dat)
+#view(v2neg_dat)
 
 ###########				JOINING			####
 
 pos_dat <- full_join(v1pos_dat, v2pos_dat)
-view(pos_dat)
+#view(pos_dat)
 
 neg_dat <- full_join(v1neg_dat, v2neg_dat)
-view(neg_dat)
+#view(neg_dat)
 
 neg_dat2 <- neg_dat %>% dplyr::select("ID", "neg_pre", "neg_post")
-view(neg_dat2)
+#view(neg_dat2)
 
 full_dat <- dat2 %>% dplyr::select("ID", "group.factor")
-view(full_dat)
+#view(full_dat)
 
 full_dat <- left_join(full_dat, pos_dat)
-view(full_dat)
+#view(full_dat)
 
 full_dat <- full_join(full_dat, neg_dat2)
-view(full_dat)
+#view(full_dat)
 
 full_dat <- full_dat %>% dplyr::select(-mood)
 names(full_dat)[names(full_dat) == 'group.factor'] <- 'group'
-view(full_dat)
+#view(full_dat)
+
+######				COMPUTE CHANGE SCORES				######
+full_dat <- mutate(full_dat,
+				   pos_chng = pos_post - pos_pre,
+				   neg_chng = neg_post - neg_pre
+				   )
+
+full_dat <- arrange(full_dat, group) %>% 
+	filter(group != "NA")
 
 
+#view(full_dat)
+
+```
+
+#				T-TESTS
+```{r , eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
 
 ###########				T-TESTS: GROUP BY 4 CONDITIONS		#########
 attach(full_dat)
@@ -191,29 +154,11 @@ t.test(pos_post, neg_post)
 ```
 
 
-
+#		ANOVA
 ```{r MoodANOVA, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+########			ANOVA OF MOOD VARIABLES		######
 
-view(full_dat)
-
-# dat3 <- dat1 %>% dplyr::select("ID", "group.factor",
-# 							   "v1.mood", "v2.mood",
-# 							   "visit1moodpre", "visit1moodpost",
-# 							   # contains("mood")
-# 							   "visit2moodpre", "visit2moodpost",
-# 							   ) %>% 
-# 	filter(group.factor != "NA")
-# 
-# view(dat3)
-# 
-# #	SHOW LEVELS
-# levels(dat3$group.factor)
-# dat3 %>% count(group.factor)
-
-full_dat <- arrange(full_dat, group) %>% 
-	filter(group != "NA")
-
-view(full_dat)
+#view(full_dat)
 head(full_dat)
 
 #		VARIABLES FOR ANOVA
@@ -222,31 +167,126 @@ head(full_dat)
 #		3.	pos_post
 #		4.	neg_pre
 #		5.	neg_post
+#		6.	pos_chng
+#		7. neg_chng
 #	
 
 # Box plots
 # ++++++++++++++++++++
 # Plot weight by group and color by group
 
-ggboxplot(full_dat, x = "group", y = "pos_pre", 
+ggboxplot(full_dat, x = "group", y = "neg_chng", 
           color = "group", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
           order = c("HC", "CLBP", "FM"),
-          ylab = "Baseline mood", xlab = "Group")
+          ylab = "Neg mood change", xlab = "Group")
 
-# Compute the analysis of variance
+######			Compute the analysis of variance		######
 Pospre_aov <- aov(pos_pre ~ group, data = full_dat)
 # Summary of the analysis
 summary(Pospre_aov)
 
-# dat3 <- order(dat3$group.factor,
-# 			levels = c("HC", "CLBP", "FM"))
 
-###		END
+# construct anova model for each column of dat1[, my_outcome_variables]
+model_summaries <- full_dat[,c("pos_pre", "pos_post",
+							   "neg_pre", "neg_post",
+							   "pos_chng", "neg_chng"
+							   )] %>%
+	purrr::map(~ aov(.x ~ group, data = full_dat))  %>%
+	# append the TukeyHSD CI estimates
+	purrr::map(function(x) {
+		list(
+			model = x,
+			tukey = TukeyHSD(x)
+		)
+	})
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+GetModels <- function(l) l$model
+Models <- purrr::map(model_summaries, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+Models2 <- filter(Models,  term !="Residuals")
+Models2 <- Models2 %>% 
+	dplyr::select("Name" , "p.value")
 
 
+###			ANOVA TABLE MADE WITH KABLE			####
+library(kableExtra)
+Models2 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ANOVA full model") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
 
+##		END		##
 
 
 ```
+
+
+## POSTHOC 
+```{r PostHoc-Scaled, eval=TRUE, echo=FALSE, message=FALSE}
+######			POST-HOC ANALYSES OF MOOD VARIABLES			######
+GetTukeys <- function(m) m$tukey
+Tukeys  <- purrr::map(model_summaries, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+ # head(Tukeys)
+#view(Tukeys)
+
+names(Tukeys)[names(Tukeys) == 'Name'] <- 'Var'
+names(Tukeys)[names(Tukeys) == 'estimate'] <- 'diff'
+
+
+
+######			POST-HOC TABLE USING KABLE			######
+select(Tukeys, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.054, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, 
+						"pos_pre" = 3,
+						"pos_post" = 3,
+						"neg_pre" = 3,
+						"neg_post" = 3,
+						"pos_chng" = 3,
+						"neg_chng" = 3
+						))
+# scroll_box(height = "500px")
+
+
+```
+
 
 
