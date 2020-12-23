@@ -1,0 +1,182 @@
+---
+title: "Untitled"
+author: "Jason"
+date: "12/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r JUNKmood, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+#	Need to compare mood pre positive by group
+#	Need to compare mood pre negative by group
+#	Need to compare mood post positive by group
+#	Need to compare mood post negative by group
+
+##			USED FOR FINDING ORIGINAL VARIABLES		##
+colnames(select(dat1, contains("mood")))
+colnames(select(dat1, contains("cond")))
+
+dat1 %>% count(group.factor)
+
+v1Pos1_dat <- dat1 %>%
+	filter(v1mood.factor == "PosV1")
+v1Pos1_dat %>% count(group.factor)
+v1Pos1_dat2 %>% count(gp)
+
+v1Pos1_dat <- dat1 %>% dplyr::select("ID","group.factor",
+									 "v1mood.factor",
+									 "visit1moodpre"
+)
+
+
+v1Pos1_dat <- v1Pos1_dat %>%
+	filter(v1mood == "PosV1") %>%
+	filter(visit1moodpre != "NA")
+
+
+
+view(v1Pos1_dat)
+view(v1Pos1_dat2)
+
+names(v1Pos1_dat)[names(v1Pos1_dat) == 'group.factor'] <- 'gp'
+names(v1Pos1_dat)[names(v1Pos1_dat) == 'v1mood.factor'] <- 'v1mood'
+
+#		Converting data to long format
+dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
+							   "v1.mood", "v2.mood",
+							   "visit1moodpre", "visit1moodpost",
+							   # contains("mood")
+							   "visit2moodpre", "visit2moodpost",
+							   )
+
+view(dat2)
+
+```
+
+
+
+
+```{r Moodsubset, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+############			v1 POSITIVE PRE POST	 ##########
+v1pos_dat <- dat2 #filter(dat2, dat2$visit1moodpre != "NA")
+view(v1pos_dat)
+
+v1pos_dat <- v1pos_dat %>% 
+	dplyr::select("ID", "group.factor", "v1.mood",
+				  contains("visit1")) %>% 
+	filter(v1.mood == "pos")
+
+names(v1pos_dat)[names(v1pos_dat) == 'visit1moodpre'] <- 'pos_pre'
+names(v1pos_dat)[names(v1pos_dat) == 'visit1moodpost'] <- 'pos_post'
+names(v1pos_dat)[names(v1pos_dat) == 'v1.mood'] <- 'mood'
+
+
+v1pos_dat <- as_tibble(v1pos_dat)
+head(v1pos_dat)
+
+view(v1pos_dat)
+
+############			v1 NEGATIVE PRE POST	 ##########
+
+v1neg_dat <- dat2 #filter(dat2, dat2$visit1moodpre != "NA")
+view(v1neg_dat)
+
+v1neg_dat <- v1neg_dat %>% 
+	dplyr::select("ID", "group.factor", "v1.mood",
+				  contains("visit1")) %>% 
+	filter(v1.mood == "neg")
+
+names(v1neg_dat)[names(v1neg_dat) == 'visit1moodpre'] <- 'neg_pre'
+names(v1neg_dat)[names(v1neg_dat) == 'visit1moodpost'] <- 'neg_post'
+names(v1neg_dat)[names(v1neg_dat) == 'v1.mood'] <- 'mood'
+
+v1neg_dat <- as_tibble(v1neg_dat)
+head(v1neg_dat)
+
+view(v1neg_dat)
+
+
+############			v2 POSITIVE PRE POST	 ##########
+v2pos_dat <- dat2 #filter(dat2, dat2$visit2moodpre != "NA")
+view(v2pos_dat)
+
+v2pos_dat <- v2pos_dat %>% 
+	dplyr::select("ID", "group.factor", "v2.mood",
+				  contains("visit2")) %>% 
+	filter(v2.mood == "pos")
+
+names(v2pos_dat)[names(v2pos_dat) == 'visit2moodpre'] <- 'pos_pre'
+names(v2pos_dat)[names(v2pos_dat) == 'visit2moodpost'] <- 'pos_post'
+names(v2pos_dat)[names(v2pos_dat) == 'v2.mood'] <- 'mood'
+
+
+v2pos_dat <- as_tibble(v2pos_dat)
+head(v2pos_dat)
+
+view(v2pos_dat)
+
+############			v2 NEGATIVE PRE POST	 ##########
+
+v2neg_dat <- dat2 #filter(dat2, dat2$visit2moodpre != "NA")
+view(v2neg_dat)
+
+v2neg_dat <- v2neg_dat %>% 
+	dplyr::select("ID", "group.factor", "v2.mood",
+				  contains("visit2")) %>% 
+	filter(v2.mood == "neg")
+
+names(v2neg_dat)[names(v2neg_dat) == 'visit2moodpre'] <- 'neg_pre'
+names(v2neg_dat)[names(v2neg_dat) == 'visit2moodpost'] <- 'neg_post'
+names(v2neg_dat)[names(v2neg_dat) == 'v2.mood'] <- 'mood'
+
+v2neg_dat <- as_tibble(v2neg_dat)
+head(v2neg_dat)
+
+view(v2neg_dat)
+
+###########				JOINING			####
+
+pos_dat <- full_join(v1pos_dat, v2pos_dat)
+view(pos_dat)
+
+neg_dat <- full_join(v1neg_dat, v2neg_dat)
+view(neg_dat)
+
+neg_dat2 <- neg_dat %>% dplyr::select("ID", "neg_pre", "neg_post")
+view(neg_dat2)
+
+full_dat <- dat2 %>% dplyr::select("ID", "group.factor")
+view(full_dat)
+
+full_dat <- left_join(full_dat, pos_dat)
+view(full_dat)
+
+full_dat <- full_join(full_dat, neg_dat2)
+view(full_dat)
+
+full_dat <- full_dat %>% dplyr::select(-mood)
+names(full_dat)[names(full_dat) == 'group.factor'] <- 'group'
+view(full_dat)
+
+
+
+###########				T-TESTS: GROUP BY 4 CONDITIONS		#########
+attach(full_dat)
+t.test(pos_pre ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+t.test(pos_post ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+t.test(neg_pre ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+t.test(neg_post ~ group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+t.test(pos_pre, neg_pre)
+t.test(pos_post, neg_post)
+
+
+```
