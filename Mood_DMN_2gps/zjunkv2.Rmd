@@ -1,0 +1,597 @@
+---
+title: "Untitled"
+author: "Jason"
+date: "12/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#				MOOD t-test
+```{r Mood_Subset, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+#	Need to compare mood pre positive by group
+#	Need to compare mood pre negative by group
+#	Need to compare mood post positive by group
+#	Need to compare mood post negative by group
+
+##			USED FOR FINDING ORIGINAL VARIABLES		##
+colnames(select(dat1, contains("mood")))
+colnames(select(dat1, contains("cond")))
+
+dat1 %>% count(group.factor)
+
+# v1Pos1_dat <- dat1 %>%
+# 	filter(dat1$v1mood.factor == "PosV1")
+# v1Pos1_dat %>% count(group.factor)
+# v1Pos1_dat2 %>% count(gp)
+
+v1Pos1.dat <- dat1 %>% dplyr::select("ID","group.factor",
+									 "v1mood.factor",
+									 "visit1moodpre") %>% 
+	filter(group.factor != "NA")
+
+v1Pos1.dat2 <- v1Pos1_dat %>% 
+	filter(v1mood.factor == "PosV1") %>% 
+	filter(visit1moodpre != "NA")
+
+
+
+view(v1Pos1.dat)
+view(v1Pos1.dat2)
+
+names(v1Pos1.dat)[names(v1Pos1.dat) == 'group.factor'] <- 'gp'
+names(v1Pos1.dat)[names(v1Pos1.dat) == 'v1mood.factor'] <- 'v1mood'
+
+#		Converting data to long format
+dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
+								"v1.mood", "v2.mood",
+								"visit1moodpre", "visit1moodpost",
+								# contains("mood")
+								"visit2moodpre", "visit2moodpost"
+								)
+
+# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
+dat2 <- filter(dat2, dat2$visit1moodpre != "NA")
+
+dat2$ID <- factor(dat2$ID) # ID must be a factor
+
+dat2 %>% count(group.factor)
+
+
+
+
+
+
+v1Neg1.dat <- dat1 %>%
+	filter(v1mood.factor == "NegV1")
+v1Neg1.dat %>% count(group.factor)
+
+
+v1Pos2.dat <- dat1 %>%
+	filter(v2mood.factor == "PosV2")
+v1Pos2.dat %>% count(group.factor)
+
+v1Neg2.dat <- dat1 %>%
+	filter(v2mood.factor == "NegV2")
+v1Neg2.dat %>% count(group.factor)
+
+
+
+#	t-tests are needed for:
+#		1.	(data = dat1) visit1moodpre vs group.factor
+
+#	1. T-test
+# dat2 %>% filter(group.factor != "FM") %>% 
+# t.test(dat2$visit1moodpre ~ dat2$group.factor, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+# #		Result (NS) = no significant differences between groups for mood pre manipulation
+
+#	T-tests are needed for (Positive mood)	####
+#		1.	(data = v1Pos1) visit1moodpre vs. visit1moodpost
+#		2.	(data = v1Pos1) visit1moodpre by group.factor
+#		3.	(data = v1Pos1) visit1moodpost by group.factor
+#		4.	(data = v1Pos1) visit1moodchange by group.factor
+#		5.	(data = v1Pos1, filter = HC) visit1moodpre vs. visit1moodpost
+#		6.	(data = v1Pos1, filter = FM) visit1moodpre vs. visit1moodpost
+
+#	1. T-test
+t.test(v1Pos1.dat$visit1moodpre, v1Pos1.dat$visit1moodpost,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (sig): Across groups mood significantly improved from pre to post
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpre and v1Pos1.dat$visit1moodpost
+# t = -3.868, df = 81.755, p-value = 0.0002194
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -3.175129 -1.018330
+# sample estimates:
+# mean of x mean of y 
+#  3.488636  5.585366 
+
+
+v1pos2gp <- v1pos_dat %>% filter(group.factor != "FM")
+v2pos2gp <- v2pos_dat %>% filter(group.factor != "FM")
+
+v1neg2gp <- v1neg_dat %>% filter(group.factor != "FM")
+v2neg2gp <- v2neg_dat %>% filter(group.factor != "FM")
+
+#	2. T-test		#####
+t.test(v1pos2gp$pos_pre ~ v1pos2gp$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+t.test(v2pos2gp$pos_pre ~ v2pos2gp$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+t.test(v1neg2gp$neg_pre ~ v1neg2gp$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+t.test(v2neg2gp$neg_pre ~ v2neg2gp$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+#		RESULT (NS): There is a trend toward significance but both HC = CLBP pre positive mood
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpre by v1Pos1.dat$group.factor
+# t = 1.9084, df = 22.469, p-value = 0.0692
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -0.1272539  3.1074028
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           4.538462           3.048387 
+
+#	3. T-test	####
+t.test(v1Pos1.dat$visit1moodpost ~ v1Pos1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT(sig): There is a significant group difference in post positive mood (HC > CLBP) 
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpost by v1Pos1.dat$group.factor
+# t = 2.3443, df = 30.961, p-value = 0.02566
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  0.225306 3.241727
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           6.769231           5.035714 
+
+
+
+#	4. T-test	####
+t.test(v1Pos1.dat$v1moodchange ~ v1Pos1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There doesn’t seem to be a significant difference in mood change 
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$v1moodchange by v1Pos1.dat$group.factor
+# t = 0.056369, df = 18.251, p-value = 0.9557
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -1.244313  1.312994
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           2.230769           2.196429 
+
+
+
+#	T-tests are needed for (Negative mood)
+#		1.	(data = v1Neg1) visit1moodpre vs. visit1moodpost
+#		2.	(data = v1Neg1) visit1moodpre by group.factor
+#		3.	(data = v1Neg1) visit1moodpost by group.factor
+#		4.	(data = v1Neg1) visit1moodchange by group.factor
+#		5.	(data = v1Neg1, filter = HC) visit1moodpre vs. visit1moodpost
+#		6.	(data = v1Neg1, filter = FM) visit1moodpre vs. visit1moodpost
+
+
+#	1. T-test
+t.test(v1Neg1.dat$visit1moodpre, v1Neg1.dat$visit1moodpost,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (SIG): Across groups there is a change in negative mood (pre < post)
+#
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$visit1moodpre and v1Neg1.dat$visit1moodpost
+# t = -8.5595, df = 89.102, p-value = 3.038e-13
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -4.357135 -2.715365
+# sample estimates:
+# mean of x mean of y 
+#   1.12000   4.65625 
+
+
+#	2. T-test
+t.test(v1Neg1.dat$visit1moodpre ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There is no group difference in pre negative mood
+
+# 	Welch Two Sample t-test
+# 
+# data:  v1Neg1.dat$visit1moodpre by v1Neg1.dat$group.factor
+# t = -1.1198, df = 45.142, p-value = 0.2687
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -1.4964441  0.4269997
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#          0.7777778          1.3125000 
+
+
+
+#	3. T-test
+t.test(v1Neg1.dat$visit1moodpost ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT(NS): There is no group difference in post negative mood
+
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$visit1moodpost by v1Neg1.dat$group.factor
+# t = -1.5044, df = 41.11, p-value = 0.1401
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -2.2511924  0.3289702
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           4.055556           5.016667 
+
+
+
+#	4. T-test
+t.test(v1Neg1.dat$v1moodchange ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There does not seem to be a significant difference in mood change 
+#
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$v1moodchange by v1Neg1.dat$group.factor
+# t = -0.84463, df = 45.761, p-value = 0.4027
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -2.0489069  0.8377958
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           3.277778           3.883333 
+
+
+
+
+
+
+
+
+
+
+
+
+
+dat1.mood <- dat1
+
+dat1.mood  <- dat1.mood %>% dplyr::select("ID","group.factor",
+										  )
+
+
+levels(dat1$v1mood.factor)
+
+```
+
+```{r test, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+#		5. t-test neg_pre vs neg_post	####
+#	1. T-test
+t.test(twoGpMood$neg_pre, twoGpMood$neg_post,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+#		6. t-test neg_pre by group		####
+#	2. T-test (data = twoGpMood)
+t.test(twoGpMood$neg_pre ~ twoGpMood$group,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+#		7. t-test neg_post by group	####
+#	3. T-test (data = twoGpMood)
+t.test(twoGpMood$neg_post ~ twoGpMood$group,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+#		8. t-test neg_chng by group	####
+#	4. T-test 	(data = twoGpMood)
+t.test(twoGpMood$neg_chng ~ twoGpMood$group,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+
+
+```
+
+
+
+
+
+
+#				OLD T-TESTS
+##				MOOD t-test
+```{r Mood_Subset, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+#	Need to compare mood pre positive by group
+#	Need to compare mood pre negative by group
+#	Need to compare mood post positive by group
+#	Need to compare mood post negative by group
+
+##			USED FOR FINDING ORIGINAL VARIABLES		##
+colnames(select(dat1, contains("mood")))
+colnames(select(dat1, contains("cond")))
+
+dat1 %>% count(group.factor)
+
+# v1Pos1_dat <- dat1 %>%
+# 	filter(dat1$v1mood.factor == "PosV1")
+# v1Pos1_dat %>% count(group.factor)
+# v1Pos1_dat2 %>% count(gp)
+
+v1Pos1.dat <- dat1 %>% dplyr::select("ID","group.factor",
+									 "v1mood.factor",
+									 "visit1moodpre") %>% 
+	filter(group.factor != "NA")
+
+v1Pos1.dat2 <- v1Pos1_dat %>% 
+	filter(v1mood.factor == "PosV1") %>% 
+	filter(visit1moodpre != "NA")
+
+
+
+view(v1Pos1.dat)
+view(v1Pos1.dat2)
+
+names(v1Pos1.dat)[names(v1Pos1.dat) == 'group.factor'] <- 'gp'
+names(v1Pos1.dat)[names(v1Pos1.dat) == 'v1mood.factor'] <- 'v1mood'
+
+#		Converting data to long format
+dat2 <- dat1 %>% dplyr::select("ID", "group.factor",
+								"v1.mood", "v2.mood",
+								"visit1moodpre", "visit1moodpost",
+								# contains("mood")
+								"visit2moodpre", "visit2moodpost"
+								)
+
+# dat1  <- filter(dat1, group.factor != 0, dat1$bdi1 != "NA")
+dat2 <- filter(dat2, dat2$visit1moodpre != "NA")
+
+dat2$ID <- factor(dat2$ID) # ID must be a factor
+
+dat2 %>% count(group.factor)
+
+
+
+
+
+
+v1Neg1.dat <- dat1 %>%
+	filter(v1mood.factor == "NegV1")
+v1Neg1.dat %>% count(group.factor)
+
+
+v1Pos2.dat <- dat1 %>%
+	filter(v2mood.factor == "PosV2")
+v1Pos2.dat %>% count(group.factor)
+
+v1Neg2.dat <- dat1 %>%
+	filter(v2mood.factor == "NegV2")
+v1Neg2.dat %>% count(group.factor)
+
+
+
+#	t-tests are needed for:
+#		1.	(data = dat1) visit1moodpre vs group.factor
+
+#	1. T-test
+# dat2 %>% filter(group.factor != "FM") %>% 
+# t.test(dat2$visit1moodpre ~ dat2$group.factor, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+# #		Result (NS) = no significant differences between groups for mood pre manipulation
+
+#	T-tests are needed for (Positive mood)
+#		1.	(data = v1Pos1) visit1moodpre vs. visit1moodpost
+#		2.	(data = v1Pos1) visit1moodpre by group.factor
+#		3.	(data = v1Pos1) visit1moodpost by group.factor
+#		4.	(data = v1Pos1) visit1moodchange by group.factor
+#		5.	(data = v1Pos1, filter = HC) visit1moodpre vs. visit1moodpost
+#		6.	(data = v1Pos1, filter = FM) visit1moodpre vs. visit1moodpost
+
+#	1. T-test
+t.test(v1Pos1.dat$visit1moodpre, v1Pos1.dat$visit1moodpost,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (sig): Across groups mood significantly improved from pre to post
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpre and v1Pos1.dat$visit1moodpost
+# t = -3.868, df = 81.755, p-value = 0.0002194
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -3.175129 -1.018330
+# sample estimates:
+# mean of x mean of y 
+#  3.488636  5.585366 
+
+
+
+#	2. T-test
+t.test(v1Pos1.dat$visit1moodpre ~ v1Pos1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There is a trend toward significance but both HC = CLBP pre positive mood
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpre by v1Pos1.dat$group.factor
+# t = 1.9084, df = 22.469, p-value = 0.0692
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -0.1272539  3.1074028
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           4.538462           3.048387 
+
+#	3. T-test
+t.test(v1Pos1.dat$visit1moodpost ~ v1Pos1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT(sig): There is a significant group difference in post positive mood (HC > CLBP) 
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$visit1moodpost by v1Pos1.dat$group.factor
+# t = 2.3443, df = 30.961, p-value = 0.02566
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  0.225306 3.241727
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           6.769231           5.035714 
+
+
+
+#	4. T-test
+t.test(v1Pos1.dat$v1moodchange ~ v1Pos1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There doesn’t seem to be a significant difference in mood change 
+#
+# 	Welch Two Sample t-test
+# data:  v1Pos1.dat$v1moodchange by v1Pos1.dat$group.factor
+# t = 0.056369, df = 18.251, p-value = 0.9557
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -1.244313  1.312994
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           2.230769           2.196429 
+
+
+
+#	T-tests are needed for (Positive mood)
+#		1.	(data = v1Neg1) visit1moodpre vs. visit1moodpost
+#		2.	(data = v1Neg1) visit1moodpre by group.factor
+#		3.	(data = v1Neg1) visit1moodpost by group.factor
+#		4.	(data = v1Neg1) visit1moodchange by group.factor
+#		5.	(data = v1Neg1, filter = HC) visit1moodpre vs. visit1moodpost
+#		6.	(data = v1Neg1, filter = FM) visit1moodpre vs. visit1moodpost
+
+
+#	1. T-test
+t.test(v1Neg1.dat$visit1moodpre, v1Neg1.dat$visit1moodpost,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (SIG): Across groups there is a change in negative mood (pre < post)
+#
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$visit1moodpre and v1Neg1.dat$visit1moodpost
+# t = -8.5595, df = 89.102, p-value = 3.038e-13
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -4.357135 -2.715365
+# sample estimates:
+# mean of x mean of y 
+#   1.12000   4.65625 
+
+
+#	2. T-test
+t.test(v1Neg1.dat$visit1moodpre ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There is no group difference in pre negative mood
+
+# 	Welch Two Sample t-test
+# 
+# data:  v1Neg1.dat$visit1moodpre by v1Neg1.dat$group.factor
+# t = -1.1198, df = 45.142, p-value = 0.2687
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -1.4964441  0.4269997
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#          0.7777778          1.3125000 
+
+
+
+#	3. T-test
+t.test(v1Neg1.dat$visit1moodpost ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT(NS): There is no group difference in post negative mood
+
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$visit1moodpost by v1Neg1.dat$group.factor
+# t = -1.5044, df = 41.11, p-value = 0.1401
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -2.2511924  0.3289702
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           4.055556           5.016667 
+
+
+
+#	4. T-test
+t.test(v1Neg1.dat$v1moodchange ~ v1Neg1.dat$group.factor,
+	   mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+#		RESULT (NS): There does not seem to be a significant difference in mood change 
+#
+# 	Welch Two Sample t-test
+# data:  v1Neg1.dat$v1moodchange by v1Neg1.dat$group.factor
+# t = -0.84463, df = 45.761, p-value = 0.4027
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -2.0489069  0.8377958
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           3.277778           3.883333 
+
+
+
+
+
+
+
+
+
+
+
+
+
+dat1.mood <- dat1
+
+dat1.mood  <- dat1.mood %>% dplyr::select("ID","group.factor",
+										  )
+
+
+levels(dat1$v1mood.factor)
+
+```
+
+
+
+## Group by age for overall sample.
+```{r Gp_by_age, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+newdf <- df %>% filter(party %in% c('R','D')) %>%
+  group_by(termstart,party) %>% summarise(MeanAge=mean(age,na.rm=T)) %>%
+  pivot_wider(names_from = party,values_from=MeanAge)
+
+newdf <- dat1 %>% filter(group.factor %in% c('HC','CLBP', 'FM')) %>%
+	group_by(group.factor) %>%
+	summarise(MeanAge=mean(age_visit_1,na.rm=T), 
+			  ageSD=sd(age_visit_1, na.rm = T)) 
+
+
+#%>%
+	pivot_longer(newdf,
+				 group.factor,
+				 names_from = group.factor,values_from=MeanAge)
+#	pivot_wider(names_from = group.factor,values_from=MeanAge)
+	
+```
+
+
+# TABLES
+```{r table, eval=TRUE, echo=FALSE, message=FALSE, comment = ""}
+
+gpsex1 %>% 
+	kable(align = "c", padding = 4, caption = "Entire Sample") %>% 
+	kable_styling(c("striped", "bordered"), full_width = F) %>% 
+	add_header_above(c(" ", "Sex" = 2, "")) %>%
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	row_spec(4, bold = T, background = "lightgrey") %>% 
+	column_spec(4, bold = T, background = "lightgray")
+
+```
