@@ -595,3 +595,85 @@ gpsex1 %>%
 	column_spec(4, bold = T, background = "lightgray")
 
 ```
+
+### t-test Age 2 groups
+```{r ttest_Age, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+##		FINAL SUBJECT COUNT		##
+# dat1 %>% count(group.factor)
+# dat2  <-  filter(dat1, group.factor != "FM")
+
+# age.dat   <- dat1
+# # age.dat   <- filter(dat1, group.factor != "FM")
+# # age.dat2 <- droplevels(age.dat)
+# age.dat %>% count(group.factor)
+# age.dat2 %>% count(group.factor)
+dat2 %>% count(group.factor)
+
+##		FINAL SUBJECT COUNT		##
+# dat2  <-  filter(dat1, group.factor != "FM")
+
+# attach(age.dat)
+boxplot(dat1$age_visit_1 ~ dat1$group)
+# boxplot(age.dat2$age_visit_1 ~ age.dat2$group)
+
+# dat3 <- dat2 %>% filter(group.factor != "FM") 
+
+# dat4 <- droplevels(dat3)
+# 
+# str(age.dat)
+# 			  
+# boxplot()
+			# table(droplevels(aq)$Month)
+
+
+# %>% 
+# boxplot(visit1moodpre ~ group.factor,data = dat1)
+
+# Ho: mean age of HC = CLBP
+# two-sided test
+# assume non-equal variances
+
+ageGroup.dat <- t.test(dat1$age_visit_1 ~ dat1$group.factor, mu=0, 
+					   alt="two.sided", conf=0.95, var.eq=F, paired=F)
+ageGroup.dat
+
+# 	Welch Two Sample t-test
+# 
+# data:  dat1$age_visit_1 by dat1$group.factor
+# t = -4.6149, df = 67.795, p-value = 1.802e-05
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -11.914839  -4.721086
+# sample estimates:
+#   mean in group HC mean in group CLBP 
+#           24.79230           33.11026 
+
+
+
+
+
+
+
+
+v1MoodPre.ttest <- t.test(age.dat$visit1moodpre ~ age.dat$group.factor, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+v1MoodPre.ttest
+
+
+t.test(age.dat$visit1moodpre ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+t.test(age.dat$visit1moodpost ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+t.test(age.dat$visit1moodpost ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+
+# ageEd.dat <- t.test(age.dat$education ~ age.dat$group, mu=0, alt="two.sided", conf=0.95, var.eq=F, paired=F)
+
+ageGroup.dat
+
+	
+```
+
+
+
+
