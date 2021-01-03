@@ -677,3 +677,878 @@ ageGroup.dat
 
 
 
+
+
+##		ANOVA Raw
+```{r ANOVA-rawdata, eval=FALSE, echo=TRUE, message=FALSE}
+#		USING PSQI RAW COMPONENT SCORES
+# construct anova model for each column of dat1[, my_outcome_variables]
+model_summary_raw <- dat1[,c("age_visit_1", "slpQualraw", "slpLatraw", "slpDurraw",
+						   "slpEffraw", "slpDistraw","slpMedsraw",
+						   "slpDayFcnraw", "psqi_Globalraw","ess_total",
+						   "isi_total", "bdi_total", "mcgill_total",
+						   "TIB")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat1))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+# GetModels <- function(l) l$model
+Models3 <- purrr::map(model_summary_raw, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+Models3 <- filter(Models3,  term !="Residuals")
+Models3 <- Models3 %>% 
+	dplyr::select("Name" , "p.value")
+
+
+####			ANOVA TABLE MADE WITH KABLE			####
+Models3 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ANOVA full model with raw scores") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+##		END		##
+```
+
+
+
+##		Post Hoc Raw
+```{r PostHoc-Raw, eval=FALSE, echo=TRUE, message=FALSE}
+# GetTukeys <- function(m) m$tukey
+Tukeys3  <- purrr::map(model_summary_raw, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Tukeys)
+# Tukeys
+
+names(Tukeys3)[names(Tukeys3) == 'Name'] <- 'Var'
+names(Tukeys3)[names(Tukeys3) == 'estimate'] <- 'diff'
+
+
+
+####			PostHoc TABLE USING KABLE			####
+select(Tukeys3, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.05, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc (PSQI raw) group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, 
+						"age_visit_1" = 3,
+						"Sleep Quality raw" = 3, 
+						"Sleep Latency raw" = 3,
+						"Sleep Duration raw" = 3,
+						"Sleep Efficacy raw" = 3,
+						"Sleep Disturbance raw" = 3,
+						"Sleep Medications raw" = 3,
+						"Sleep Daytime Functioning raw" = 3,
+						"PSQI Global raw" = 3,
+						"ESS Total" = 3, 
+						"ISI Total" = 3,
+						"BDI Total" = 3,
+						"McGill Total" = 3,
+						"Time in Bed" = 3)) #%>% 
+# scroll_box(height = "500px")
+
+
+
+```  
+
+***   
+
+***  
+
+**STOP HERE  **
+
+***  
+
+***  
+
+# ISI ANALYSES
+This set of analyses uses a subset of subjects who have completed the ISI
+
+
+Also create a dataset of subjects with ISI data (dat.isi).
+```{r ISIsubgroup, eval=FALSE, echo=FALSE, message=FALSE, comment=""}
+#		Subgroup with ISI data
+# 		Getting selected variables
+dat.isi <- dat1 %>% dplyr::select("group.factor",
+										"slpQual", "slpLat", 
+										"slpDur", "slpEff", 
+										"slpDist", "slpMeds",
+										"slpDayFcn", "psqi_Global",
+										"ess_total", "isi_total",
+										"bdi_total", "mcgill_total", 
+										"TIB")
+
+dat.isi2 <- dat1 %>% dplyr::select("group.factor",
+										"slpQualraw", "slpLatraw", 
+										"slpDurraw", "slpEffraw", 
+										"slpDistraw", "slpMedsraw",
+										"slpDayFcnraw", "psqi_Globalraw",
+										"ess_total", "isi_total",
+										"bdi_total", "mcgill_total", 
+										"TIB")
+
+#		Removing subjects without ISI data
+dat.isi <- dat.isi %>% 
+	na.omit()
+dim(dat.isi)
+
+# dat.isi2 <- dat.isi2 %>% 
+# 	na.omit()
+# dim(dat.isi2)
+
+# dat.isi %>% count(group.factor)
+# dat.isi2 %>% count(group.factor)
+
+```
+
+
+## ISI DATA VARIANCE
+The variable(s) in the ISI data with variance issues are:
+```{r QA-ISI-DATA, eval=FALSE, echo=FALSE, comment=""}
+nearZeroVar(dat.isi,
+			uniqueCut = 2,
+			names = TRUE)
+
+```
+
+
+```{r ISI-Drop-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+# dat.isi2 <- dat1 %>% dplyr::select("group.factor",
+# 										"slpQualraw", "slpLatraw", 
+# 										"slpDurraw", "slpEffraw", 
+# 										"slpDistraw", "slpMedsraw",
+# 										"slpDayFcnraw", "psqi_Globalraw",
+# 										"ess_total", "isi_total",
+# 										"bdi_total", "mcgill_total", 
+# 										"TIB")
+
+
+
+######		FM GROUP			####
+dat.isi2 <- dat.isi2 %>% select(!"group.factor", -TIB)
+# dat.isi2 <- dat.isi2 %>% select(!"group.factor")
+# dat.isi2 <- dat.isi2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+isiCorrPlot <- corr.data(dat.isi2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 3, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=2.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "ISI All groups",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+```{r ISI-ANOVA, eval=FALSE, echo=FALSE, message=FALSE}
+dat.isi <- as_tibble(dat.isi)
+
+# construct anova model for each column of dat1[, my_outcome_variables]
+isi_model_summaries <- dat.isi[,c("group.factor","slpQual", "slpLat", "slpDur",
+						   "slpEff", "slpDist","slpMeds",
+						   "slpDayFcn", "psqi_Global","ess_total",
+						   "isi_total", "bdi_total", "mcgill_total",
+						   "TIB")] %>%
+  purrr::map(~ aov(.x ~ group.factor, data = dat.isi))  %>%
+  # append the TukeyHSD CI estimates
+  purrr::map(function(x) {
+    list(
+      model = x,
+      tukey = TukeyHSD(x)
+    )
+  })
+
+
+head(dat.isi)
+
+
+
+####		THIS RETURNS THE RESULTS OF THE OVERALL ANOVA	####
+GetModels <- function(l) l$model
+isi_Models <- purrr::map(isi_model_summaries, GetModels) %>% 
+  purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Models)
+
+#		
+isi_Models2 <- filter(isi_Models,  term !="Residuals")
+isi_Models2 <- isi_Models2 %>% 
+	dplyr::select("Name" , "p.value")
+
+
+####			ANOVA TABLE MADE WITH KABLE			####
+isi_Models2 %>%
+	mutate(p.value = 
+		   	cell_spec(
+		   		(formatC(x = p.value, 
+		   				 digits=3, width = 3, 
+		   				 format='g', flag = "-", drop0trailing = TRUE, 
+		   				 preserve.width = "common")), "html",
+		   		color = ifelse(p.value <= 0.054, 
+		   					   yes="red", no="blue"), escape = F)
+	) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec(
+			(formatC(x,digits=3, width=3, 
+					 format="f", flag="-", drop0trailing = FALSE)),
+			"html")}
+	) %>%
+	kable("html", escape = FALSE, align = "l", padding = 4,
+		  caption = "ISI subgroup ANOVA full model") %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant main effect for group (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" )
+
+##		END		##
+```
+
+
+```{r ISI-PostHoc, eval=FALSE, echo=FALSE, message=FALSE}
+GetTukeys <- function(m) m$tukey
+isi_Tukeys  <- purrr::map(isi_model_summaries, GetTukeys)  %>% 
+	purrr::map_dfr(broom::tidy, .id = "Name")
+# head(Tukeys)
+# Tukeys
+
+names(isi_Tukeys)[names(isi_Tukeys) == 'Name'] <- 'Var'
+names(isi_Tukeys)[names(isi_Tukeys) == 'estimate'] <- 'diff'
+
+
+
+####			PostHoc TABLE USING KABLE			####
+select(isi_Tukeys, -term, -Var) %>%
+	mutate(adj.p.value = 
+		   	cell_spec((formatC(x = adj.p.value, 
+		   					   digits=3, width = 3, 
+		   					   format='g', flag = "-", drop0trailing = TRUE, 
+		   					   preserve.width = "common")), "html",
+		   			  color = ifelse(adj.p.value <= 0.054, 
+		   			  			   yes="red", no="blue"), escape = F)) %>% 
+	mutate_if(is.numeric, function(x) {
+		cell_spec((formatC(x,digits=3, width=3, 
+						   format="f", flag="-", drop0trailing = FALSE)),
+				  "html")}) %>%
+	kable("html", escape = FALSE, align = "l", 
+		  caption = "PostHoc group comparisons: **See** *Note* at table end",
+		  padding = 2) %>%
+	kable_styling(c("striped", "bordered", "hover"), full_width = F) %>%
+	footnote(general = "Red = Significant group tests (p ≤ 0.05)")  %>% 
+	row_spec(0, bold = T, color = "white", background = "#461B7E" ) %>% 
+	pack_rows(index = c(" " = 0, "Sleep Quality" = 3, #)) #, 
+						"Sleep Latency" = 3,
+						"Sleep Duration" = 3,
+						"Sleep Efficacy" = 3,
+						"Sleep Disturbance" = 3,
+						"Sleep Medications" = 3,
+						"Sleep Daytime Functioning" = 3,
+						"PSQI Global" = 3,
+						"ESS Total" = 3, 
+						"ISI Total" = 3,
+						"BDI Total" = 3,
+						"McGill Total" = 3,
+						"Time in Bed" = 3)) #%>% 
+# scroll_box(height = "500px")
+
+
+
+```
+
+
+
+# END - BEYOND HERE IS EXPLORATORY
+
+
+
+
+## BAR PLOTS
+```{r BARS-1, eval=FALSE, echo=FALSE, message=FALSE}
+dat.bar1.orig  <- dat1 %>% dplyr::select("ID","group.factor",
+										 "slpQual", "slpLat", 
+										 "slpDur", "slpEff", 
+										 "slpDayFcn", "psqi_Global",
+										 "ess_total", "bdi_total", 
+										 "mcgill_total")
+
+dat.bar1.orig$ID <- factor(dat.bar1.orig$ID) # ID must be a factor
+names(dat.bar1.orig)[names(dat.bar1.orig)=="group.factor"] <- "group"
+
+
+####			BAR CHART DATA NEED TO BE IN LONG FORMAT		####
+
+#		Plot all the data at once
+dat.bar0 <- dat.bar1.orig
+
+#	select data for 1st bar chart = BDI, ESS, McGill
+dat.bar1a <- select(dat.bar1.orig, ID, group, 
+					slpDayFcn, slpEff, slpDur,
+					slpQual, slpLat)
+
+#	select data for 2nd bar chart
+dat.bar1b <- select(dat.bar1.orig, ID, group, 
+				   ess_total, psqi_Global, bdi_total)
+
+#	select data for 3rd bar chart
+dat.bar1c <- select(dat.bar1.orig, ID, group, 
+					mcgill_total)
+
+#	select data for 3rd bar chart
+dat.bar1d <- select(dat.bar1.orig, ID, group, 
+					mcgill_total, psqi_Global)
+
+
+
+
+# str(dat.bar)
+
+#		Convert to long format
+bar0.melt <- melt(dat.bar0, id.vars = c("ID", "group")) 
+bar1a.melt <- melt(dat.bar1a, id.vars = c("ID", "group")) 
+bar1b.melt <- melt(dat.bar1b, id.vars = c("ID", "group"))
+bar1c.melt <- melt(dat.bar1c, id.vars = c("ID", "group"))
+bar1d.melt <- melt(dat.bar1d, id.vars = c("ID", "group"))
+
+# head(bar1a.melt)
+
+#		Rename "value"
+names(bar0.melt)[names(bar0.melt)=="value"] <- "score"
+names(bar1a.melt)[names(bar1a.melt)=="value"] <- "score"
+names(bar1b.melt)[names(bar1b.melt)=="value"] <- "score"
+names(bar1c.melt)[names(bar1c.melt)=="value"] <- "score"
+names(bar1d.melt)[names(bar1d.melt)=="value"] <- "score"
+
+
+#		Calculate means and sem
+bar0.means <- ddply(bar0.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sd = sd(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1a.means <- ddply(bar1a.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+
+bar1b.means <- ddply(bar1b.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1c.means <- ddply(bar1c.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+bar1d.means <- ddply(bar1d.melt, c("group", "variable"),
+					summarise,
+					mean = mean(score),
+					sem = sd(score)/sqrt(length(score)),
+					lsem = mean - sem,
+					usem = mean + sem)
+
+
+#		PLOT THE LONG DATA
+ggplot(bar0.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,40)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	# scale_x_discrete(limits = vlevels1a) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons of all vars") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) 
+
+
+ggplot(bar1a.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,2.5)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons of psqi vars") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) 
+
+
+ggplot(bar1b.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	# coord_cartesian(ylim = c(0,3)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "Group comparisons")
+
+ggplot(bar1c.means, aes(x = variable, y = mean, fill = group )) +
+	geom_bar(position = position_dodge(.9), colour = "black", 
+			 stat = "identity") +
+	geom_errorbar(position = position_dodge(.9), width = .25,
+				  aes(ymin = mean - sem, ymax = mean + sem)) +
+	coord_cartesian(ylim = c(0,40)) +
+	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+	scale_y_continuous(breaks = waiver()) +
+	geom_hline(yintercept = 0) +
+	labs(title = "McGill pain questionnaire")
+
+# ggplot(bar1d.means, aes(x = variable, y = mean, fill = group )) +
+# 	geom_bar(position = position_dodge(.9), colour = "black", 
+# 			 stat = "identity") +
+# 	geom_errorbar(position = position_dodge(.9), width = .25,
+# 				  aes(ymin = mean - sem, ymax = mean + sem)) +
+# 	# coord_cartesian(ylim = c(0,40)) +
+# 	scale_fill_manual(values = c("#19c01a", "#1349ec", "#ec1313")) +
+# 	scale_y_continuous(breaks = waiver()) +
+# 	geom_hline(yintercept = 0)
+
+
+```
+
+
+```{r BARPLOT-test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+
+#		VISUALIZE THE GROUP DIFFERENCES	WITH SIG LEVELS		#
+# Bar plot of mean +/-se
+ggbarplot(ToothGrowth, x = "dose", y = "len", add = "mean_se")+
+  stat_compare_means() +                                         # Global p-value
+  stat_compare_means(ref.group = "0.5", label = "p.signif",
+                     label.y = c(22, 29))                   # compare to ref.group
+
+# Line plot of mean +/-se
+ggline(ToothGrowth, x = "dose", y = "len", add = "mean_se")+
+  stat_compare_means() +                                         # Global p-value
+  stat_compare_means(ref.group = "0.5", label = "p.signif",
+                     label.y = c(22, 29))     
+
+# _________________________________________#
+#		EXAMPLE		#
+
+zdat <- data.frame(Group = c("S1", "S1", "S2", "S2"),
+              Sub   = c("A", "B", "A", "B"),
+              Value = c(3,5,7,8))  
+
+ggplot(zdat, aes(Group, Value)) +
+	geom_bar(aes(fill = Sub), stat="identity", 
+			 position="dodge", width=.5) +
+	geom_signif(stat="identity",
+				data=data.frame(x=c(0.875, 1.875),
+								xend=c(1.125, 2.125),
+								y=c(5.8, 8.5), 
+								annotation=c("**", "NS")),
+				aes(x=x,xend=xend, y=y, yend=y,
+					annotation=annotation)) #+
+	geom_signif(comparisons=list(c("S1", "S2")),
+				annotations="***",
+				y_position = 9.3, 
+				tip_length = 0, vjust=0.4) 
+# +
+	# scale_fill_manual(values = c("grey80", "grey20"))
+
+#___________________________________________#
+library(ggplot2)
+library(ggpval)
+data("PlantGrowth")
+plt <- ggplot(PlantGrowth, aes(group, weight)) +
+  geom_boxplot()
+add_pval(plt, pairs = list(c(1, 3)), test='wilcox.test')
+#_________________________________________
+
+ggplot(bar1a.means, aes(variable, mean)) +
+	geom_bar(aes(fill = group),
+			 stat = "identity",
+			 position = "dodge", 
+			 width = .5) +
+	geom_signif(stat = "identity",
+				data=data.frame(x=c(0.875, 1.875),
+								xend=c(1.125, 2.125),
+								y=c(2.5, 3.5), 
+								annotation=c("***", "bob")),
+				aes(x=x,xend=xend, y=y, yend=y,
+					annotation=annotation))
+
+```
+
+
+#		Plots
+## BOX PLOTS
+```{r Box-plots, eval=FALSE, echo=FALSE, message=FALSE}
+####		PSQI BOXPLOT		####
+head(dat.bar1a)
+head(bar1a.means)
+ggplot(bar1a.means, aes(x = group, y = mean )) +
+	geom_boxplot() +
+	geom_signif(comparisons = list(c("HC", "CLBP"),
+								   c("HC", "FM"),
+								   c("CLBP", "FM")),
+				 # y_position = c(30, 40, 25),
+				map_signif_level=function(p)sprintf("p = %.2g", p))
+
+
+
+```
+
+
+```{r BOXPLOT-test, eval=FALSE, echo=FALSE, message=FALSE, comment = ""}
+# PERFORMING TEST
+compare_means(mcgill_total ~ group.factor, data = dat1,
+			  ref.group = ".all.", method = "t.test")
+
+
+#		VISUALIZE THE GROUP DIFFERENCES			#
+# 		Pairwise comparison of all agains the grand mean (I think)
+ggboxplot(dat1, x = "group.factor",
+		  y = "mcgill_total",
+		  color = "group.factor",
+		  add = "jitter",
+		  legend = "none") +
+	rotate_x_text(angle = 45) +
+	geom_hline(yintercept = mean(dat1$mcgill_total),
+			   linetype = 2) + # add horizontal line at base mean
+	stat_compare_means(method = "anova", label.y = 80) +
+	stat_compare_means(label = "p.signif",
+					   method = "t.test",
+					   ref.group = ".all.")  
+
+#		VISUALIZE GROUP DIFS WITH SIG LEVELS IN PLOT
+gp_comparisons = list(c("HC", "CLBP"),
+					  c("CLBP", "FM"),
+					  c("HC", "FM"))
+
+ggboxplot(dat1,
+		  x = "group.factor",
+		  y = "mcgill_total",
+		  color =  "group.factor",
+		  palette = "jco") +
+	stat_compare_means(comparisons = gp_comparisons,
+					   label.y = c(45, 55, 65)) +
+	stat_compare_means(label.y = 80)
+
+
+##			END			##
+```
+
+
+
+
+#PLOTS
+
+## CORR PLOTS
+
+```{r HC-Group, eval=FALSE, echo=FALSE, message=FALSE}
+######		HC GROUP			####
+dat.HC2 <- dat.HC %>% select(!"group.factor", -isi_total)
+dat.HC2 <- dat.HC2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.HC2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "HC group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r CLBP-Group, eval=FALSE, echo=FALSE, message=FALSE}
+######		CLBP GROUP			####
+dat.CLBP2 <- dat.CLBP %>% select(!"group.factor", -isi_total)
+dat.CLBP2 <- dat.CLBP2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.CLBP2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "CLBP group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r FM-Group, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.FM2 <- dat.FM %>% select(!"group.factor", -isi_total)
+dat.FM2 <- dat.FM2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.FM2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "FM group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r Pain-Groups, eval=FALSE, echo=FALSE, message=FALSE}
+######		PAIN GROUPS			####
+dat.pain2 <- dat.pain %>% select(!"group.factor", -isi_total)
+dat.pain2 <- dat.pain2 %>% select(!"slpDist", -TIB)
+
+####		PLOT R AND P VALUES IN A SINGLE GRAPH		####
+###		FROM A FORUM POST IN 2019		###
+
+####		Breaking down the plot		####
+
+corr.data(dat.pain2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + # provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+	# This overlays a grid of varying blue and adds the "corr" legend on the right, 
+	                    # and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 2, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size = 2, colour="black")  + # color of text
+	# scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+	scale_fill_gradient2(low="red", mid="white", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "Both pain groups",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=3)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+
+
+```
+
+
+```{r CLBP-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.CLBP2 <- dat.CLBP %>% select(!"group.factor", -TIB)
+dat.CLBP2 <- dat.CLBP2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+corr.data(dat.CLBP2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 1.5, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=1.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "CLBP pain group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+
+```{r HC-corrplot, eval=FALSE, echo=FALSE, message=FALSE}
+######		FM GROUP			####
+dat.HC2 <- dat.HC %>% select(!"group.factor", -TIB)
+dat.HC2 <- dat.HC2 %>% select(!"slpDist")
+
+####		Breaking down the plot		####
+
+corr.data(dat.HC2) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars), check_overlap = TRUE)) + 
+		# provides chart area and variable names
+	geom_tile(colour = "grey20", aes(fill = corr), size = 0.5) + 
+			# This overlays a grid of varying blue and adds
+			# the "corr" legend on the right, and adds a dark grey grid.
+	# geom_point(aes(size=p.value,
+	# 			   colour=cut(abs(corr), c(0, 0.01, 0.05, 1),
+	# 			   		   include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label = sprintf("%1.2f", corr)), # add correlation values
+			  position = position_nudge(y = 0.2), # position in the square for values
+			  size = 1.5, # size of text
+			  colour = "black") + # color of text
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), # adds p-value to square
+			  position=position_nudge(y=-0.2), # positions p-value
+			  size=1.5, colour="black")  + # color of text
+	scale_fill_gradient2(low="red", mid="yellow2", high="blue", # color scale for color bar
+						 midpoint=0, limits=c(-1,1)) + # range of values for color bar
+	scale_size_continuous(range=c(8,12)) + # I am not sure what this line does
+	labs(title = "Healthy control group",
+		 x="",
+		 y="") +
+	scale_x_discrete(guide=guide_axis(n.dodge=2)) +
+	coord_fixed()
+	# theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+	# theme_classic() +
+	# theme_cleveland() +
+
+```
+
+The end of corr plots
